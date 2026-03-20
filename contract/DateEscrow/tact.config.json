@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tact-lang/tact/main/src/config/configSchema.json",
+  "projects": [
+    {
+      "name": "DateEscrow",
+      "path": "contracts/date_escrow.tact",
+      "output": "build\\DateEscrow",
+      "options": {
+        "debug": false,
+        "external": false
+      },
+      "mode": "full"
+    }
+  ]
+}
