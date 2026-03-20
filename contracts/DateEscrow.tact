@@ -28,13 +28,15 @@ contract DateEscrow with Deployable {
     // si le date n'a pas été confirmé
     deadline: Int as uint64;
 
-    // Est-ce que chaque participant a déposé sa part ?
+    // Est-ce que chaque participant a déposé sa part ? => Met en place une deadline, Stocke l'argent
     fundedA: Bool = false;
     fundedB: Bool = false;
 
+    //Code => Requete  true => RENVOIE L ARGENT
     // Est-ce que chaque participant a confirmé que le date a eu lieu ?
     confirmA: Bool = false;
     confirmB: Bool = false;
+
 
     // Flags d'état final — un seul peut être true à la fois
     released: Bool = false;
@@ -92,7 +94,7 @@ contract DateEscrow with Deployable {
 
         if (who == self.userA) {
             self.confirmA = true;
-            return;
+            return; // Help
         }
 
         if (who == self.userB) {
