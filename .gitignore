@@ -3,7 +3,7 @@ dist/
 .next/
 .env
 examples/.env
-.env.local
+examples/nextjs-server/.env.local
 *.tsbuildinfo
 .idea/
 examples/nextjs-server/.env.local
