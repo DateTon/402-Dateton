@@ -121,6 +121,13 @@ export async function createUser(data: Partial<User> & { telegramId: number }): 
     return user;
 }
 
+export async function getAllUsers(excludeTelegramId?: number): Promise<User[]> {
+    const db = await getDatabase();
+    const filter = excludeTelegramId ? { telegramId: { $ne: excludeTelegramId } } : {};
+    const docs = await db.collection(COLLECTION).find(filter).toArray();
+    return docs.map((doc) => decryptUser(doc as Record<string, unknown>));
+}
+
 export async function updateUser(telegramId: number, data: Partial<User>): Promise<User | null> {
     const db = await getDatabase();
     const existing = await findUserByTelegramId(telegramId);

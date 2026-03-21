@@ -1,36 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { getDatabase } from '@/lib/mongodb'
+import { getDatabase } from '../../../lib/mongodb'
 
-// GET — récupère le bid actuel entre deux users
+// GET — get the current bid for a match
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const matchId = searchParams.get('matchId')
-    if (!matchId) return NextResponse.json({ error: 'matchId manquant' }, { status: 400 })
+    if (!matchId) return NextResponse.json({ error: 'matchId required' }, { status: 400 })
 
     const db = await getDatabase()
     const bid = await db.collection('bids').findOne({ matchId })
     return NextResponse.json({ bid: bid ?? null })
 }
 
-// POST — propose ou accepte un montant
+// POST — propose, accept, reject, or counter a bid
 export async function POST(req: NextRequest) {
     const cookieStore = await cookies()
-    const name = cookieStore.get('chat_user')?.value
-    if (!name) return NextResponse.json({ error: 'Non connecté' }, { status: 401 })
+    const telegramIdStr = cookieStore.get('dateton_user')?.value
+    if (!telegramIdStr) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const telegramId = Number(telegramIdStr)
     const { matchId, amount, action } = await req.json()
-    if (!matchId) return NextResponse.json({ error: 'matchId manquant' }, { status: 400 })
+    if (!matchId) return NextResponse.json({ error: 'matchId required' }, { status: 400 })
 
     const db = await getDatabase()
 
     if (action === 'propose') {
+        if (!amount || isNaN(Number(amount))) {
+            return NextResponse.json({ error: 'Valid amount required' }, { status: 400 })
+        }
         await db.collection('bids').updateOne(
             { matchId },
             {
                 $set: {
-                    proposedBy: name,
-                    amount,
+                    proposedBy: telegramId,
+                    amount: Number(amount),
                     status: 'pending',
                     updatedAt: new Date(),
                 },
@@ -44,7 +48,7 @@ export async function POST(req: NextRequest) {
     if (action === 'accept') {
         await db.collection('bids').updateOne(
             { matchId },
-            { $set: { status: 'accepted', acceptedBy: name, updatedAt: new Date() } }
+            { $set: { status: 'accepted', acceptedBy: telegramId, updatedAt: new Date() } }
         )
         return NextResponse.json({ ok: true })
     }
@@ -57,5 +61,5 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true })
     }
 
-    return NextResponse.json({ error: 'action invalide' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
 }
