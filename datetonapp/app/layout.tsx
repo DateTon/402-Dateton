@@ -3,6 +3,8 @@ import type { ReactNode } from 'react'
 import Script from 'next/script'
 import './globals.css'
 import TonConnectProvider from '../components/TonConnectProvider'
+import { NavProvider } from '../components/NavContext'
+import BottomNav from '../components/BottomNav'
 
 export const metadata: Metadata = {
     title: 'DateTon',
@@ -22,7 +24,12 @@ export default function RootLayout({ children }: RootLayoutProps) {
             strategy="beforeInteractive"
         />
         <TonConnectProvider>
-            {children}
+            <NavProvider>
+                <div className="app-shell">
+                    {children}
+                </div>
+                <BottomNav />
+            </NavProvider>
         </TonConnectProvider>
         </body>
         </html>

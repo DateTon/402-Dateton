@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "vercel-build": "cd .. && pnpm install --no-frozen-lockfile && pnpm -r build",
-    "start": "next start"
+    "start": "next start",
+    "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
     "@ton-x402/core": "workspace:*",
