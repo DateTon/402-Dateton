@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
+import ConnectWallet from '../components/ConnectWallet'
+
 
 type TelegramUser = {
     id?: number;
@@ -83,7 +85,7 @@ export default function HomePage() {
             clearTimeout(fadeTimer);
             clearTimeout(endTimer);
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     function checkTelegram() {
@@ -589,6 +591,11 @@ export default function HomePage() {
                         <div className="submit-page">
                             <h2>Ready to go?</h2>
                             <p>Your profile is complete. Hit the button below to create your account.</p>
+
+                            <div style={{ marginBottom: '1rem' }}>
+                                <p style={{ marginBottom: '0.5rem' }}>Connect your TON wallet :</p>
+                                <ConnectWallet />
+                            </div>
 
                             <button
                                 type="button"

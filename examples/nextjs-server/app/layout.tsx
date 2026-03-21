@@ -1,16 +1,17 @@
-import type { Metadata } from "next";
-import type { ReactNode } from "react";
-import Script from "next/script";
-import "./globals.css";
+import type { Metadata } from 'next'
+import type { ReactNode } from 'react'
+import Script from 'next/script'
+import './globals.css'
+import TonConnectProvider from '../components/TonConnectProvider'
 
 export const metadata: Metadata = {
-    title: "DateTon",
-    description: "Telegram Mini App DateTon",
-};
+    title: 'DateTon',
+    description: 'Telegram Mini App DateTon',
+}
 
 type RootLayoutProps = {
-    children: ReactNode;
-};
+    children: ReactNode
+}
 
 export default function RootLayout({ children }: RootLayoutProps) {
     return (
@@ -20,8 +21,10 @@ export default function RootLayout({ children }: RootLayoutProps) {
             src="https://telegram.org/js/telegram-web-app.js"
             strategy="beforeInteractive"
         />
-        {children}
+        <TonConnectProvider>
+            {children}
+        </TonConnectProvider>
         </body>
         </html>
-    );
+    )
 }
