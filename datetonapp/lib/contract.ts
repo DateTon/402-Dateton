@@ -1,54 +1,88 @@
-import { TonClient, Address, toNano, beginCell, Cell } from "@ton/ton";
+import { TonClient, Address, toNano, beginCell } from "@ton/ton";
+
+// TonConnect chain IDs
+const CHAIN_TESTNET = "-3";
 
 const client = new TonClient({
     endpoint: "https://testnet.toncenter.com/api/v2/jsonRPC",
-    apiKey: process.env.TONCENTER_API_KEY ?? "",
+    apiKey: process.env.RPC_API_KEY ?? "",
 });
 
-const STATES = ["OPEN", "PARTIAL", "FUNDED", "RELEASED", "REFUNDED"];
-
+/**
+ * Query the on-chain state of a DateEscrow contract.
+ */
 export async function getContractState(contractAddress: string) {
     const address = Address.parse(contractAddress);
 
-    const [stateResult, fundedResult] = await Promise.all([
-        client.runMethod(address, "getState"),
-        client.runMethod(address, "getParticipantsFunded"),
-    ]);
+    const stateResult = await client.runMethod(address, "state");
+    const state = stateResult.stack.readString();
 
-    const stateIndex = stateResult.stack.readNumber();
-    const funded = fundedResult.stack.readNumber();
+    const fundedResult = await client.runMethod(address, "participantsFunded");
+    const funded = Number(fundedResult.stack.readBigNumber());
 
-    return {
-        address: contractAddress,
-        state: STATES[stateIndex] ?? "UNKNOWN",
-        funded,
-    };
+    const confirmsResult = await client.runMethod(address, "confirmationsCount");
+    const confirmations = Number(confirmsResult.stack.readBigNumber());
+
+    return { address: contractAddress, state, funded, confirmations };
 }
 
+/**
+ * Build a TON Connect transaction to fund the escrow.
+ * Sends the Fund message (opcode 0xA86DD47D = 2825770109).
+ */
 export function buildFundTransaction(contractAddress: string, amountTon: string) {
+    // Normalize address to testnet-friendly format
+    const addr = Address.parse(contractAddress).toString({ testOnly: true, bounceable: true });
+
+    // Fund message body: just the opcode, no extra fields
+    const body = beginCell()
+        .storeUint(2825770109, 32)
+        .endCell()
+        .toBoc()
+        .toString("base64");
+
     return {
         validUntil: Math.floor(Date.now() / 1000) + 600,
+        network: CHAIN_TESTNET,
         messages: [
             {
-                address: contractAddress,
+                address: addr,
                 amount: toNano(amountTon).toString(),
+                payload: body,
             },
         ],
     };
 }
 
+/**
+ * Build a TON Connect transaction to confirm the date happened.
+ * Sends the ConfirmRelease message (opcode 0xCC179A0D = 3424098829).
+ */
 export function buildConfirmTransaction(contractAddress: string) {
+    const addr = Address.parse(contractAddress).toString({ testOnly: true, bounceable: true });
+
+    const body = beginCell()
+        .storeUint(3424098829, 32)
+        .endCell()
+        .toBoc()
+        .toString("base64");
+
     return {
         validUntil: Math.floor(Date.now() / 1000) + 600,
+        network: CHAIN_TESTNET,
         messages: [
             {
-                address: contractAddress,
+                address: addr,
                 amount: toNano("0.05").toString(),
+                payload: body,
             },
         ],
     };
 }
 
+/**
+ * Check if a contract is deployed and active on-chain.
+ */
 export async function contractExists(contractAddress: string): Promise<boolean> {
     try {
         const address = Address.parse(contractAddress);

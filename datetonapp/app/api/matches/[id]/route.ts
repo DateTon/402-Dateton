@@ -4,10 +4,11 @@ import { getContractState } from "@/lib/contract";
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const state = await getContractState(params.id);
+        const { id } = await params;
+        const state = await getContractState(id);
         return NextResponse.json(state);
     } catch (e: any) {
         return NextResponse.json(
