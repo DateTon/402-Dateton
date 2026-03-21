@@ -14,7 +14,6 @@ export async function deployEscrowContract(params: {
     wallet1: string;
     wallet2: string;
     amountTon: number;
-    deadline: number;
 }): Promise<string> {
     const mnemonic = process.env.WALLET_MNEMONIC;
     if (!mnemonic) throw new Error('WALLET_MNEMONIC env var is missing');
@@ -38,7 +37,6 @@ export async function deployEscrowContract(params: {
         Address.parse(params.wallet1),
         Address.parse(params.wallet2),
         toNano(params.amountTon.toString()),
-        BigInt(params.deadline)
     );
 
     const contractAddress = escrow.address.toString({ testOnly: true, bounceable: true });

@@ -81,6 +81,32 @@ export function buildConfirmTransaction(contractAddress: string) {
 }
 
 /**
+ * Build a TON Connect transaction to request a refund after deadline.
+ * Sends the Refund message (opcode 0xAD7C3ADD = 2910599901).
+ */
+export function buildRefundTransaction(contractAddress: string) {
+    const addr = Address.parse(contractAddress).toString({ testOnly: true, bounceable: true });
+
+    const body = beginCell()
+        .storeUint(2910599901, 32)
+        .endCell()
+        .toBoc()
+        .toString("base64");
+
+    return {
+        validUntil: Math.floor(Date.now() / 1000) + 600,
+        network: CHAIN_TESTNET,
+        messages: [
+            {
+                address: addr,
+                amount: toNano("0.05").toString(),
+                payload: body,
+            },
+        ],
+    };
+}
+
+/**
  * Check if a contract is deployed and active on-chain.
  */
 export async function contractExists(contractAddress: string): Promise<boolean> {

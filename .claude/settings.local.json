@@ -16,7 +16,16 @@
       "Bash(cd \"C:\\\\Users\\\\Hedi\\\\Documents\\\\402Daton\\\\contract\\\\DateEscrow\" && npx blueprint build 2>&1)",
       "Bash(cd \"C:\\\\Users\\\\Hedi\\\\Documents\\\\402Daton\\\\contract\\\\DateEscrow\" && echo \"DateEscrow\" | npx blueprint build 2>&1)",
       "Bash(cd C:\\\\Users\\\\Hedi\\\\Documents\\\\402Daton\\\\datetonapp\\\\app\\\\api\\\\matches:*)",
-      "Bash(cd C:\\\\Users\\\\Hedi\\\\Documents\\\\402Daton\\\\datetonapp\\\\app\\\\date:*)"
+      "Bash(cd C:\\\\Users\\\\Hedi\\\\Documents\\\\402Daton\\\\datetonapp\\\\app\\\\date:*)",
+      "Bash(npx next:*)",
+      "Bash(npx tsc:*)",
+      "Bash(python3 -c \"print\\(hex\\(2910599901\\)\\)\")",
+      "Bash(node -e \"console.log\\(\\(2910599901\\).toString\\(16\\)\\)\")",
+      "Bash(npx tsx:*)",
+      "Bash(MONGODB_URI=\"mongodb+srv://hedifourati_db_user:hackathon1234@chat-app.lkhtc8e.mongodb.net/chat_app?retryWrites=true&w=majority\" npx tsx scripts/seedActivities.ts)",
+      "Bash(MONGODB_URI=\"mongodb+srv://hedifourati_db_user:hackathon1234@chat-app.lkhtc8e.mongodb.net/chat_app?retryWrites=true&w=majority\" MONGODB_DB_NAME=\"DateTon\" npx tsx -e \":*)",
+      "Bash(MONGODB_URI=\"mongodb+srv://hedifourati_db_user:hackathon1234@chat-app.lkhtc8e.mongodb.net/chat_app?retryWrites=true&w=majority\" MONGODB_DB_NAME=\"DateTon\" npx tsx scripts/seedActivities.ts)",
+      "Bash(npx blueprint:*)"
     ]
   }
 }
