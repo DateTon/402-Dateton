@@ -4,7 +4,19 @@
       "Bash(cd:*)",
       "Bash(npm install:*)",
       "Bash(tail:*)",
-      "Bash(true:*)"
+      "Bash(true:*)",
+      "Bash(cd C:\\\\Users\\\\Hedi\\\\Documents\\\\402Daton\\\\datetonapp:*)",
+      "Bash(cd C:\\\\Users\\\\Hedi\\\\Documents\\\\402Daton\\\\datetonapp\\\\app\\\\api:*)",
+      "Bash(cd C:\\\\Users\\\\Hedi\\\\Documents\\\\402Daton\\\\datetonapp\\\\app:*)",
+      "Bash(head:*)",
+      "Bash(grep:*)",
+      "Bash(cd \"C:\\\\Users\\\\Hedi\\\\Documents\\\\402Daton\\\\datetonapp\" && npx tsx scripts/seed.ts 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\Hedi\\\\Documents\\\\402Daton\\\\datetonapp\" && npx tsx scripts/seed.ts --reset 2>&1)",
+      "Bash(cd C:\\\\Users\\\\Hedi\\\\Documents\\\\402Daton\\\\datetonapp\\\\app\\\\chat:*)",
+      "Bash(cd \"C:\\\\Users\\\\Hedi\\\\Documents\\\\402Daton\\\\contract\\\\DateEscrow\" && npx blueprint build 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\Hedi\\\\Documents\\\\402Daton\\\\contract\\\\DateEscrow\" && echo \"DateEscrow\" | npx blueprint build 2>&1)",
+      "Bash(cd C:\\\\Users\\\\Hedi\\\\Documents\\\\402Daton\\\\datetonapp\\\\app\\\\api\\\\matches:*)",
+      "Bash(cd C:\\\\Users\\\\Hedi\\\\Documents\\\\402Daton\\\\datetonapp\\\\app\\\\date:*)"
     ]
   }
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import ConnectWallet from '../components/ConnectWallet'
+import { useNav } from '../components/NavContext'
 
 
 type TelegramUser = {
@@ -49,8 +50,13 @@ const GENDER_OPTIONS = [
 
 const TOTAL_STEPS = 4;
 
+// Track across navigations whether the splash has already been shown
+let splashShownOnce = false;
+
 export default function HomePage() {
-    const [state, setState] = useState<AppState>("SPLASH");
+    const { setNavVisible } = useNav();
+    const skipSplash = splashShownOnce;
+    const [state, setState] = useState<AppState>(skipSplash ? "LOADING" : "SPLASH");
     const [tgUser, setTgUser] = useState<TelegramUser | null>(null);
     const [appUser, setAppUser] = useState<AppUser | null>(null);
     const [splashFading, setSplashFading] = useState(false);
@@ -79,8 +85,18 @@ export default function HomePage() {
         setTimeout(() => setToast(null), 3000);
     }, []);
 
-    // Splash screen timer
+    // Hide navbar on non-HOME states
     useEffect(() => {
+        setNavVisible(state === "HOME");
+    }, [state, setNavVisible]);
+
+    // Splash screen timer (skipped on return navigation)
+    useEffect(() => {
+        if (skipSplash) {
+            checkTelegram();
+            return;
+        }
+        splashShownOnce = true;
         const fadeTimer = setTimeout(() => setSplashFading(true), 2500);
         const endTimer = setTimeout(() => checkTelegram(), 3000);
         return () => {
