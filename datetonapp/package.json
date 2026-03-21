@@ -1,11 +1,11 @@
 {
-  "name": "x402-nextjs-example",
+  "name": "datetonapp",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "vercel-build": "cd ../.. && pnpm install --no-frozen-lockfile && pnpm -r build",
+    "vercel-build": "cd .. && pnpm install --no-frozen-lockfile && pnpm -r build",
     "start": "next start"
   },
   "dependencies": {
