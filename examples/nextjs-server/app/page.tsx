@@ -1,26 +1,29 @@
-import { cookies } from 'next/headers';
-import LoginForm from '../components/LoginForm';
-import ChatClient from '../components/ChatClient';
+import { cookies } from 'next/headers'
+import LoginForm from '../components/LoginForm'
+import ConnectWallet from '../components/ConnectWallet'
 
 export default async function HomePage() {
-    const cookieStore = await cookies();
-    const userCookie = cookieStore.get('chat_user');
-    const currentUser = userCookie?.value || '';
+    const cookieStore = await cookies()
+    const currentUser = cookieStore.get('chat_user')?.value || ''
 
     return (
         <main className="page">
             <section className="card">
-                <h1>Simple Encrypted Chat</h1>
+                <h1>💘 DateTon</h1>
                 <p className="subtitle">
-                    Login ultra simple par nom + cookie, messages stockés chiffrés dans MongoDB.
+                    Planifie un date sécurisé avec un dépôt escrow sur TON.
                 </p>
 
-                {currentUser ? (
-                    <ChatClient currentUser={currentUser} />
-                ) : (
+                {!currentUser ? (
                     <LoginForm />
+                ) : (
+                    <div>
+                        <p>👋 Bonjour <strong>{currentUser}</strong></p>
+                        <p>Connecte ton wallet TON pour continuer :</p>
+                        <ConnectWallet />
+                    </div>
                 )}
             </section>
         </main>
-    );
+    )
 }
