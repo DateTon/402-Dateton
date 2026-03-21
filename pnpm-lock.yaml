@@ -45,6 +45,9 @@ importers:
       '@ton/ton':
         specifier: ^15.0.0
         version: 15.4.0(@ton/core@0.62.1(@ton/crypto@3.3.0))(@ton/crypto@3.3.0)
+      '@tonconnect/ui':
+        specifier: ^2.4.2
+        version: 2.4.2
       '@tonconnect/ui-react':
         specifier: ^2.4.2
         version: 2.4.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
