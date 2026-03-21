@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 
 export default function TonConnectProvider({ children }: { children: ReactNode }) {
     return (
-        <TonConnectUIProvider manifestUrl="https://raw.githubusercontent.com/DateTon/402-Dateton/gab/examples/nextjs-server/public/tonconnect-manifest.json">
+        <TonConnectUIProvider manifestUrl="https://gist.githubusercontent.com/gabestcoo/542b9dba0abd6290e737deb1da35e6f9/raw/17646d830a78b1a3147b7b64d0f774f640c81682/tonconnect-manifest.json">
             {children}
         </TonConnectUIProvider>
     )
