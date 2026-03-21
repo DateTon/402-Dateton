@@ -1,24 +1,14 @@
-// Since v1.6.0, Tact has a contract parameters syntax that can supersede
-// lazy initialization by init() for all contracts that do not require specific on-chain
-// deployment logic that must be run only once in the `init()` function.
-//
-// Note that the empty parameter list above is still a parameter list,
-// meaning that the contract won't have an implicit or explicit `init(){:tact}` function
-// and will enjoy storage write optimizations and use less gas overall.
-//
-// See: https://docs.tact-lang.org/book/contracts/#parameters
 import "@stdlib/deploy";
 
 // ─── Messages entrants ───────────────────────────────────────────────────────
 
-// Envoyé par userA ou userB pour déposer leur part
+// Envoye par userA ou userB pour deposer leur part
 message Fund {}
 
-// Envoyé par userA ou userB pour confirmer que le date a eu lieu
+// Envoye par userA ou userB pour confirmer que le date a eu lieu
 message ConfirmRelease {}
 
-// Envoyé par n'importe qui après expiration de la deadline
-// pour déclencher le remboursement
+// Envoye par n'importe quel participant pour declencher le remboursement
 message Refund {}
 
 
@@ -26,53 +16,41 @@ message Refund {}
 
 contract DateEscrow with Deployable {
 
-// Adresses des deux participants, fixées au déploiement
+    // Adresses des deux participants, fixees au deploiement
     userA: Address;
     userB: Address;
 
-// Montant que chaque participant doit déposer (en nanoTON)
+    // Montant que chaque participant doit deposer (en nanoTON)
     amountPerUser: Int as coins;
 
-// Timestamp Unix après lequel le refund devient possible
-// si le date n'a pas été confirmé
-    deadline: Int as uint64;
-
-// Est-ce que chaque participant a déposé sa part ?
+    // Est-ce que chaque participant a depose sa part ?
     fundedA: Bool = false;
     fundedB: Bool = false;
 
-// Est-ce que chaque participant a confirmé que le date a eu lieu ?
+    // Est-ce que chaque participant a confirme que le date a eu lieu ?
     confirmA: Bool = false;
     confirmB: Bool = false;
 
-// Flags d'état final — un seul peut être true à la fois
+    // Flags d'etat final — un seul peut etre true a la fois
     released: Bool = false;
     refunded: Bool = false;
 
-// ─── Initialisation ──────────────────────────────────────────────────────
-// Appelé une seule fois au déploiement du contrat
-// Le backend crée un contrat par "deal" accepté par les deux users
-    init(userA: Address, userB: Address, amountPerUser: Int, deadline: Int) {
+    // ─── Initialisation ──────────────────────────────────────────────────────
+    init(userA: Address, userB: Address, amountPerUser: Int) {
         self.userA = userA;
         self.userB = userB;
         self.amountPerUser = amountPerUser;
-        self.deadline = deadline;
     }
 
-// ─── Dépôt ───────────────────────────────────────────────────────────────
-// Chaque participant envoie un message Fund avec exactement amountPerUser
-// Le contrat identifie qui envoie via sender()
+    // ─── Depot ───────────────────────────────────────────────────────────────
     receive(msg: Fund) {
-        // On bloque si le contrat est déjà terminé
         require(!self.released, "Deja libere");
         require(!self.refunded, "Deja rembourse");
-        require(now() <= self.deadline, "Deadline depassee");
 
         let who = sender();
 
         if (who == self.userA) {
             require(!self.fundedA, "UserA a deja depose");
-            // Vérifie que le montant envoyé est suffisant
             require(context().value >= self.amountPerUser, "Montant insuffisant");
             self.fundedA = true;
             return;
@@ -85,13 +63,10 @@ contract DateEscrow with Deployable {
             return;
         }
 
-        // Si l'expéditeur n'est ni userA ni userB → rejet
         throw(401);
     }
 
-// ─── Confirmation du date ─────────────────────────────────────────────────
-// Chaque participant confirme que le date a bien eu lieu
-// (déclenché par ton app après validation du code croisé)
+    // ─── Confirmation du date ─────────────────────────────────────────────────
     receive(msg: ConfirmRelease) {
         require(self.fundedA && self.fundedB, "Pas encore finance");
         require(!self.released, "Deja libere");
@@ -112,10 +87,7 @@ contract DateEscrow with Deployable {
         throw(401);
     }
 
-// ─── Libération des fonds ─────────────────────────────────────────────────
-// Appelé une fois que les DEUX ont confirmé via ConfirmRelease
-// Renvoie la moitié du solde à chaque participant
-// (ils utilisent cet argent pour payer l'activité)
+    // ─── Liberation des fonds ─────────────────────────────────────────────────
     receive("release") {
         require(self.fundedA && self.fundedB, "Pas encore finance");
         require(self.confirmA && self.confirmB, "Les deux doivent confirmer");
@@ -124,7 +96,6 @@ contract DateEscrow with Deployable {
 
         self.released = true;
 
-        // On garde 0.05 TON pour couvrir les frais de transaction
         let total = myBalance() - ton("0.05");
 
         send(SendParameters{
@@ -140,17 +111,16 @@ contract DateEscrow with Deployable {
         });
     }
 
-// ─── Remboursement ────────────────────────────────────────────────────────
-// Disponible uniquement après expiration de la deadline
-// Rembourse chaque participant du montant qu'il a déposé
+    // ─── Remboursement ────────────────────────────────────────────────────────
     receive(msg: Refund) {
         require(!self.released, "Deja libere");
         require(!self.refunded, "Deja rembourse");
-        require(now() > self.deadline, "Deadline pas encore atteinte");
+
+        let who = sender();
+        require(who == self.userA || who == self.userB, "Non autorise");
 
         self.refunded = true;
 
-        // On ne rembourse que les participants qui ont effectivement déposé
         if (self.fundedA) {
             send(SendParameters{
                 to: self.userA,
@@ -168,10 +138,8 @@ contract DateEscrow with Deployable {
         }
     }
 
-// ─── Getters (lecture seule) ──────────────────────────────────────────────
+    // ─── Getters (lecture seule) ──────────────────────────────────────────────
 
-// Retourne l'état lisible du contrat
-// Utile pour ton backend pour afficher l'état du date
     get fun state(): String {
         if (self.refunded) { return "REFUNDED"; }
         if (self.released) { return "RELEASED"; }
@@ -180,7 +148,6 @@ contract DateEscrow with Deployable {
         return "OPEN";
     }
 
-// Retourne combien de participants ont déposé (0, 1 ou 2)
     get fun participantsFunded(): Int {
         let count = 0;
         if (self.fundedA) { count = count + 1; }
@@ -188,7 +155,6 @@ contract DateEscrow with Deployable {
         return count;
     }
 
-// Retourne combien de participants ont confirmé le date (0, 1 ou 2)
     get fun confirmationsCount(): Int {
         let count = 0;
         if (self.confirmA) { count = count + 1; }
@@ -196,4 +162,3 @@ contract DateEscrow with Deployable {
         return count;
     }
 }
-

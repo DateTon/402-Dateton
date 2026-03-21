@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import { ObjectId } from 'mongodb'
 import { getDatabase } from '../../../lib/mongodb'
+import { deployEscrowContract } from '../../../lib/escrow'
 
 // GET — get the current bid for a match
 export async function GET(req: NextRequest) {
@@ -46,10 +48,64 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'accept') {
+        // Mark bid as accepted
         await db.collection('bids').updateOne(
             { matchId },
             { $set: { status: 'accepted', acceptedBy: telegramId, updatedAt: new Date() } }
         )
+
+        // Auto-deploy escrow contract
+        try {
+            let objectId: ObjectId
+            try { objectId = new ObjectId(matchId) } catch {
+                return NextResponse.json({ ok: true }) // bid accepted but invalid matchId for deploy
+            }
+
+            const match = await db.collection('matches').findOne({ _id: objectId })
+            const bid = await db.collection('bids').findOne({ matchId, status: 'accepted' })
+
+            if (match && bid && match.wallet1 && match.wallet2 && !bid.contractAddress) {
+                const contractAddress = await deployEscrowContract({
+                    wallet1: match.wallet1,
+                    wallet2: match.wallet2,
+                    amountTon: bid.amount,
+                })
+
+                await db.collection('bids').updateOne(
+                    { matchId, status: 'accepted' },
+                    {
+                        $set: {
+                            contractAddress,
+                            escrowStatus: 'PENDING_FUND',
+                            updatedAt: new Date(),
+                        },
+                    }
+                )
+
+                // Initialize date setup state
+                await db.collection('date_setup').updateOne(
+                    { matchId },
+                    {
+                        $set: {
+                            step: 'fund', // fund → activity → datetime → done
+                            fundedBy: [],
+                            selectedActivity: null,
+                            activityStatus: null, // pending_confirm, confirmed, declined
+                            proposedDate: null,
+                            dateStatus: null, // pending_confirm, confirmed, declined
+                            proposedBy: null,
+                            updatedAt: new Date(),
+                        },
+                        $setOnInsert: { createdAt: new Date() },
+                    },
+                    { upsert: true }
+                )
+            }
+        } catch (err) {
+            console.error('Auto-deploy failed:', err)
+            // Bid is still accepted even if deploy fails
+        }
+
         return NextResponse.json({ ok: true })
     }
 
