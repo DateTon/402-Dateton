@@ -1,21 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { getDatabase } from '@/lib/mongodb'
+import { findUserByTelegramId, updateUser } from '../../../../lib/db'
+
+const COOKIE_NAME = 'dateton_user'
 
 export async function POST(req: NextRequest) {
-    const cookieStore = await cookies()
-    const name = cookieStore.get('chat_user')?.value
-    if (!name) return NextResponse.json({ error: 'Non connecté' }, { status: 401 })
+    try {
+        const cookieStore = await cookies()
+        const telegramIdStr = cookieStore.get(COOKIE_NAME)?.value
+        if (!telegramIdStr) {
+            return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+        }
 
-    const { walletAddress } = await req.json()
-    if (!walletAddress) return NextResponse.json({ error: 'Adresse manquante' }, { status: 400 })
+        const telegramId = Number(telegramIdStr)
+        if (isNaN(telegramId)) {
+            return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
+        }
 
-    const db = await getDatabase()
-    await db.collection('users').updateOne(
-        { name },
-        { $set: { walletAddress, updatedAt: new Date() }, $setOnInsert: { createdAt: new Date() } },
-        { upsert: true }
-    )
+        const { walletAddress } = await req.json()
+        if (!walletAddress || typeof walletAddress !== 'string') {
+            return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 })
+        }
 
-    return NextResponse.json({ ok: true })
+        const user = await findUserByTelegramId(telegramId)
+        if (!user) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 })
+        }
+
+        await updateUser(telegramId, { walletAddress })
+
+        return NextResponse.json({ ok: true })
+    } catch {
+        return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    }
 }

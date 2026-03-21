@@ -2,18 +2,20 @@
 import { TonConnectButton, useTonWallet } from '@tonconnect/ui-react'
 import { useEffect } from 'react'
 
-export default function ConnectWallet() {
+type ConnectWalletProps = {
+    onWalletChange?: (address: string | null) => void
+}
+
+export default function ConnectWallet({ onWalletChange }: ConnectWalletProps) {
     const wallet = useTonWallet()
 
     useEffect(() => {
         if (wallet?.account?.address) {
-            fetch('/api/users/wallet', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ walletAddress: wallet.account.address }),
-            })
+            onWalletChange?.(wallet.account.address)
+        } else {
+            onWalletChange?.(null)
         }
-    }, [wallet])
+    }, [wallet, onWalletChange])
 
     return <TonConnectButton />
 }

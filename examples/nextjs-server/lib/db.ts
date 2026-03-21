@@ -11,6 +11,7 @@ export type User = {
     interestedIn: string[];
     interests: string[];
     images: string[];
+    walletAddress: string;
     createdAt: Date;
     updatedAt: Date;
 };
@@ -24,7 +25,8 @@ type EncryptedUser = {
     gender: EncryptedPayload;
     interestedIn: EncryptedPayload;
     interests: string[];
-    images: string[];
+    images: EncryptedPayload;
+    walletAddress: EncryptedPayload;
     createdAt: Date;
     updatedAt: Date;
 };
@@ -51,7 +53,8 @@ function encryptUser(data: User): EncryptedUser {
         gender: encryptText(data.gender),
         interestedIn: encryptText(JSON.stringify(data.interestedIn)),
         interests: data.interests,
-        images: data.images,
+        images: encryptText(JSON.stringify(data.images)),
+        walletAddress: encryptText(data.walletAddress),
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
     };
@@ -75,7 +78,15 @@ function decryptUser(doc: Record<string, unknown>): User {
         gender: safeDecrypt(doc.gender),
         interestedIn,
         interests: (doc.interests as string[]) ?? [],
-        images: (doc.images as string[]) ?? [],
+        images: (() => {
+            const raw = doc.images;
+            if (isEncryptedPayload(raw)) {
+                try { return JSON.parse(decryptText(raw)); } catch { return []; }
+            }
+            if (Array.isArray(raw)) return raw as string[];
+            return [];
+        })(),
+        walletAddress: safeDecrypt(doc.walletAddress),
         createdAt: doc.createdAt as Date,
         updatedAt: doc.updatedAt as Date,
     };
@@ -101,6 +112,7 @@ export async function createUser(data: Partial<User> & { telegramId: number }): 
         interestedIn: data.interestedIn ?? [],
         interests: data.interests ?? [],
         images: data.images ?? [],
+        walletAddress: data.walletAddress ?? '',
         createdAt: now,
         updatedAt: now,
     };

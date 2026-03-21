@@ -24,6 +24,7 @@ type AppUser = {
     interestedIn: string[];
     interests: string[];
     images: string[];
+    walletAddress: string;
 };
 
 type AppState = "SPLASH" | "DENIED" | "LOADING" | "REGISTER" | "HOME";
@@ -69,6 +70,7 @@ export default function HomePage() {
     const [images, setImages] = useState<(string | null)[]>([null, null, null, null]);
     const [uploading, setUploading] = useState<boolean[]>([false, false, false, false]);
     const [toast, setToast] = useState<string | null>(null);
+    const [walletAddress, setWalletAddress] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -268,6 +270,7 @@ export default function HomePage() {
                     interestedIn,
                     interests: selectedInterests,
                     images: images.filter(Boolean),
+                    walletAddress: walletAddress || '',
                 }),
             });
 
@@ -594,7 +597,7 @@ export default function HomePage() {
 
                             <div style={{ marginBottom: '1rem' }}>
                                 <p style={{ marginBottom: '0.5rem' }}>Connect your TON wallet :</p>
-                                <ConnectWallet />
+                                <ConnectWallet onWalletChange={setWalletAddress} />
                             </div>
 
                             <button

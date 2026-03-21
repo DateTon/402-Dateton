@@ -15,8 +15,8 @@ type RootLayoutProps = {
 
 export default function RootLayout({ children }: RootLayoutProps) {
     return (
-        <html lang="fr">
-        <body>
+        <html lang="en" suppressHydrationWarning>
+        <body suppressHydrationWarning>
         <Script
             src="https://telegram.org/js/telegram-web-app.js"
             strategy="beforeInteractive"
