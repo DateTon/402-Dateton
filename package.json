@@ -24,9 +24,11 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.15.29",
+    "@types/uuid": "^11.0.0",
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@ton-community/assets-sdk": "^0.0.5"
+    "@ton-community/assets-sdk": "^0.0.5",
+    "uuid": "^13.0.0"
   }
 }
