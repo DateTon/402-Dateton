@@ -27,7 +27,8 @@
       "Bash(MONGODB_URI=\"REDACTED_SECRET\" MONGODB_DB_NAME=\"DateTon\" npx tsx scripts/seedActivities.ts)",
       "Bash(npx blueprint:*)",
       "Bash(pnpm install:*)",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "Bash(node -e \":*)"
     ]
   }
 }

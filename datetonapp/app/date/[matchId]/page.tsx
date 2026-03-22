@@ -28,10 +28,16 @@ type Activity = {
     name: string;
     type: string;
     description: string;
-    imageUrl: string;
-    location: { name: string; city: string; address: string };
-    averagePrice: number;
-    schedule: ([string, string] | null)[]; // 7 days, Mon=0..Sun=6, each [open, close] or null
+    imageUrl?: string;
+    location?: { name: string; city: string; address: string };
+    averagePrice?: number;
+    schedule?: ([string, string] | null)[]; // 7 days, Mon=0..Sun=6, each [open, close] or null
+    // Bundle-specific fields
+    emoji?: string;
+    partnerName?: string;
+    partnerWallet?: string;
+    price?: number;
+    timeRange?: { from: number; to: number };
 };
 
 type DateSetup = {
@@ -403,10 +409,16 @@ export default function DateEscrowPage() {
                                 </div>
                                 <div className="activity-card-info">
                                     <h3>{dateSetup.selectedActivity.name}</h3>
-                                    <p className="activity-card-type">{dateSetup.selectedActivity.type}</p>
-                                    <p className="activity-card-location">
-                                        {dateSetup.selectedActivity.location.name} - {dateSetup.selectedActivity.location.address}, {dateSetup.selectedActivity.location.city}
-                                    </p>
+                                    {dateSetup.selectedActivity.type === 'bundle' ? (
+                                        <p className="bundle-partner-name">{dateSetup.selectedActivity.partnerName}</p>
+                                    ) : (
+                                        <p className="activity-card-type">{dateSetup.selectedActivity.type}</p>
+                                    )}
+                                    {dateSetup.selectedActivity.location && (
+                                        <p className="activity-card-location">
+                                            {dateSetup.selectedActivity.location.name} - {dateSetup.selectedActivity.location.address}, {dateSetup.selectedActivity.location.city}
+                                        </p>
+                                    )}
                                     <p className="activity-card-desc">{dateSetup.selectedActivity.description}</p>
                                 </div>
                                 {dateSetup.activityProposedBy === myId ? (
@@ -448,22 +460,37 @@ export default function DateEscrowPage() {
                                             </svg>
                                         </button>
 
-                                        <div className="activity-card" onClick={() => handleSelectActivity(activities[activityIndex])}>
-                                            <div className="activity-card-image">
-                                                <img src={activities[activityIndex].imageUrl} alt={activities[activityIndex].name} />
-                                            </div>
-                                            <div className="activity-card-info">
-                                                <h3>{activities[activityIndex].name}</h3>
-                                                <p className="activity-card-type">{activities[activityIndex].type}</p>
-                                                <p className="activity-card-location">
-                                                    {activities[activityIndex].location.name} - {activities[activityIndex].location.address}, {activities[activityIndex].location.city}
-                                                </p>
-                                                <p className="activity-card-price">
-                                                    ~{activities[activityIndex].averagePrice.toFixed(1)} TON avg
-                                                </p>
-                                            </div>
-                                            <p className="activity-card-select">Tap to select</p>
-                                        </div>
+                                        {(() => {
+                                            const item = activities[activityIndex]
+                                            const isBundle = item.type === 'bundle'
+                                            return (
+                                                <div className={`activity-card${isBundle ? ' activity-card-bundle' : ''}`} onClick={() => handleSelectActivity(item)}>
+                                                    {isBundle && <span className="bundle-badge">BUNDLE</span>}
+                                                    <div className="activity-card-image">
+                                                        <img src={item.imageUrl ?? `https://placehold.co/400x200/1e293b/7c3aed?text=${encodeURIComponent(item.emoji ?? '📦')}`} alt={item.name} />
+                                                    </div>
+                                                    <div className="activity-card-info">
+                                                        <h3>{item.name}</h3>
+                                                        {isBundle ? (
+                                                            <p className="bundle-partner-name">{item.partnerName}</p>
+                                                        ) : (
+                                                            <p className="activity-card-type">{item.type}</p>
+                                                        )}
+                                                        {item.location && (
+                                                            <p className="activity-card-location">
+                                                                {item.location.name} - {item.location.address}, {item.location.city}
+                                                            </p>
+                                                        )}
+                                                        <p className="activity-card-price">
+                                                            {isBundle
+                                                                ? `${item.price} TON pour 2`
+                                                                : `~${item.averagePrice.toFixed(1)} TON avg`}
+                                                        </p>
+                                                    </div>
+                                                    <p className="activity-card-select">Tap to select</p>
+                                                </div>
+                                            )
+                                        })()}
 
                                         <button
                                             className="activity-nav-btn"
@@ -494,7 +521,7 @@ export default function DateEscrowPage() {
                                     {dateSetup.proposedDate.date} at {dateSetup.proposedDate.time}
                                 </p>
                                 <p className="datetime-activity">
-                                    {selectedActivity.name} - {selectedActivity.location.name}, {selectedActivity.location.city}
+                                    {selectedActivity.name}{selectedActivity.location ? ` - ${selectedActivity.location.name}, ${selectedActivity.location.city}` : ''}
                                 </p>
                                 <p className="datetime-unlock-info">
                                     Funds will be unlockable approximately 2 hours before and after the scheduled time. Both dates must be present for the funds to be released.
@@ -524,22 +551,24 @@ export default function DateEscrowPage() {
                             <div className="datetime-propose-card">
                                 <h3>Pick a date & time</h3>
                                 <p className="datetime-activity">
-                                    {selectedActivity.name} - {selectedActivity.location.name}, {selectedActivity.location.city}
+                                    {selectedActivity.name}{selectedActivity.location ? ` - ${selectedActivity.location.name}, ${selectedActivity.location.city}` : ''}
                                 </p>
 
                                 {/* Weekly schedule table */}
-                                <table className="schedule-table">
-                                    <tbody>
-                                        {selectedActivity.schedule.map((slot, i) => (
-                                            <tr key={i} className={slot ? "" : "closed"}>
-                                                <td className="schedule-day-name">{DAY_NAMES[i]}</td>
-                                                <td className="schedule-day-hours">
-                                                    {slot ? `${slot[0]} - ${slot[1]}` : "Closed"}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                {selectedActivity.schedule && (
+                                    <table className="schedule-table">
+                                        <tbody>
+                                            {selectedActivity.schedule.map((slot, i) => (
+                                                <tr key={i} className={slot ? "" : "closed"}>
+                                                    <td className="schedule-day-name">{DAY_NAMES[i]}</td>
+                                                    <td className="schedule-day-hours">
+                                                        {slot ? `${slot[0]} - ${slot[1]}` : "Closed"}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
 
                                 <div className="datetime-inputs">
                                     <input
@@ -594,9 +623,11 @@ export default function DateEscrowPage() {
                             <p className="date-summary-detail">
                                 <strong>{selectedActivity.name}</strong>
                             </p>
-                            <p className="date-summary-detail">
-                                {selectedActivity.location.name} - {selectedActivity.location.address}, {selectedActivity.location.city}
-                            </p>
+                            {selectedActivity.location && (
+                                <p className="date-summary-detail">
+                                    {selectedActivity.location.name} - {selectedActivity.location.address}, {selectedActivity.location.city}
+                                </p>
+                            )}
                             <p className="date-summary-detail">
                                 {dateSetup.proposedDate.date} at {dateSetup.proposedDate.time}
                             </p>
