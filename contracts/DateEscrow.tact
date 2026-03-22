@@ -23,6 +23,9 @@ contract DateEscrow with Deployable {
     // Montant que chaque participant doit deposer (en nanoTON)
     amountPerUser: Int as coins;
 
+    // Nonce unique pour garantir une adresse differente a chaque cycle
+    nonce: Int as uint64;
+
     // Est-ce que chaque participant a depose sa part ?
     fundedA: Bool = false;
     fundedB: Bool = false;
@@ -36,10 +39,11 @@ contract DateEscrow with Deployable {
     refunded: Bool = false;
 
     // ─── Initialisation ──────────────────────────────────────────────────────
-    init(userA: Address, userB: Address, amountPerUser: Int) {
+    init(userA: Address, userB: Address, amountPerUser: Int, nonce: Int) {
         self.userA = userA;
         self.userB = userB;
         self.amountPerUser = amountPerUser;
+        self.nonce = nonce;
     }
 
     // ─── Depot ───────────────────────────────────────────────────────────────

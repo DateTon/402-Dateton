@@ -13,6 +13,7 @@ type FeedProfile = {
     images: string[];
     score: number;
     sharedInterests: string[];
+    boosted?: boolean;
 };
 
 export default function FeedPage() {
@@ -198,7 +199,7 @@ export default function FeedPage() {
 
             <div
                 ref={cardRef}
-                className={`feed-card ${swipeDir === "left" ? "feed-card-exit-left" : ""} ${swipeDir === "right" ? "feed-card-exit-right" : ""}`}
+                className={`feed-card ${profile.boosted ? "feed-card-boosted" : ""} ${swipeDir === "left" ? "feed-card-exit-left" : ""} ${swipeDir === "right" ? "feed-card-exit-right" : ""}`}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
                 onPointerUp={onPointerUp}
@@ -254,6 +255,11 @@ export default function FeedPage() {
                                 }}
                             />
                         </>
+                    )}
+
+                    {/* Boost badge */}
+                    {profile.boosted && (
+                        <div className="feed-boost-badge">BOOSTED</div>
                     )}
 
                     {/* Name & age overlay on photo */}

@@ -15,6 +15,20 @@
   --color-error: #ef4444;
 }
 
+html[data-theme="light"] {
+  --color-bg: #f5f7fa;
+  --color-bg-card: #ffffff;
+  --color-bg-input: #eef1f5;
+  --color-border-custom: #d1d5db;
+  --color-accent-blue: #2563eb;
+  --color-accent-blue-light: #3b82f6;
+  --color-accent-cyan: #0891b2;
+  --color-text-main: #1a1a2e;
+  --color-text-muted: #6b7280;
+  --color-success: #16a34a;
+  --color-error: #dc2626;
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { scroll-behavior: smooth; }
@@ -429,8 +443,14 @@ select.input {
 .profile-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  justify-content: space-between;
   margin-bottom: 1.5rem;
+}
+
+.profile-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .profile-avatar {
@@ -467,16 +487,16 @@ select.input {
   margin-top: 0.25rem;
   padding: 0.25rem 0.6rem;
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-muted);
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--color-border-custom);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
 }
 .edit-profile-btn:hover {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-main);
+  border-color: var(--color-accent-cyan);
 }
 
 .edit-cancel-btn {
@@ -591,6 +611,51 @@ select.input {
 
 @keyframes swipeExitRight {
   to { transform: translateX(120vw) rotate(20deg); opacity: 0; }
+}
+
+.feed-card-boosted {
+  border: 2px solid #f0c040;
+  box-shadow: 0 0 16px rgba(240, 192, 64, 0.35);
+}
+
+.feed-boost-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: linear-gradient(135deg, #f0c040, #e6a800);
+  color: #1a1a2e;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: 12px;
+  z-index: 5;
+}
+
+.boost-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 0.75rem;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #f0c040, #e6a800);
+  color: #1a1a2e;
+  font-weight: 600;
+  font-size: 0.85rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.boost-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.boost-active {
+  font-size: 0.8rem;
+  color: #f0c040;
+  margin-top: 0.5rem;
 }
 
 /* Photo area — cropped shorter so buttons stay visible above navbar */
@@ -922,6 +987,28 @@ select.input {
   align-items: center;
 }
 
+.date-back-step-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  align-self: flex-start;
+}
+
+.date-back-step-btn:hover {
+  color: var(--color-text);
+}
+
+.date-back-step-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .escrow-final {
   padding: 1rem;
   border-radius: 12px;
@@ -1092,22 +1179,21 @@ select.input {
 }
 
 .bid-popup-input-row {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
   margin-bottom: 1rem;
 }
 
 .bid-popup-input {
-  flex: 1;
+  width: 100%;
   background: var(--color-bg-input);
   border: 1px solid var(--color-border-custom);
   border-radius: 8px;
-  padding: 0.6rem 0.75rem;
+  padding: 0.6rem 3.5rem 0.6rem 0.75rem;
   color: var(--color-text-main);
   font-size: 1.1rem;
   outline: none;
-  text-align: center;
 }
 
 .bid-popup-input:focus {
@@ -1115,9 +1201,12 @@ select.input {
 }
 
 .bid-popup-currency {
+  position: absolute;
+  right: 0.75rem;
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--color-accent-cyan);
+  pointer-events: none;
 }
 
 /* ── Chat + button ── */
@@ -1207,8 +1296,8 @@ select.input {
 .chat-page {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  max-height: 100vh;
+  flex: 1;
+  min-height: 0;
   background: var(--color-bg);
 }
 
@@ -1258,11 +1347,12 @@ select.input {
 
 .chat-messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .chat-empty {
@@ -1279,6 +1369,7 @@ select.input {
   font-size: 0.9rem;
   line-height: 1.4;
   word-wrap: break-word;
+  flex-shrink: 0;
 }
 
 .chat-bubble-me {
@@ -1304,11 +1395,19 @@ select.input {
   text-align: right;
 }
 
+.chat-system-msg {
+  text-align: center;
+  padding: 8px 16px;
+  margin: 8px 0;
+  font-size: 0.8rem;
+  color: var(--text-muted, #8a8a9a);
+  font-style: italic;
+}
+
 .chat-input-bar {
   display: flex;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  padding-bottom: calc(0.75rem + 64px);
   background: var(--color-bg-card);
   border-top: 1px solid var(--color-border-custom);
   flex-shrink: 0;
@@ -1321,7 +1420,7 @@ select.input {
   border-radius: 20px;
   padding: 0.5rem 1rem;
   color: var(--color-text-main);
-  font-size: 0.9rem;
+  font-size: 16px;
   outline: none;
 }
 
@@ -1349,36 +1448,43 @@ select.input {
   cursor: not-allowed;
 }
 
-.chat-refund-bar {
+.chat-refund-banner {
   display: flex;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  padding-bottom: calc(0.5rem + 64px);
-  background: var(--color-bg-card);
-  border-top: 1px solid var(--color-border-custom);
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, rgba(234, 88, 12, 0.15), rgba(234, 88, 12, 0.08));
+  border-top: 1px solid rgba(234, 88, 12, 0.4);
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  gap: 0.75rem;
   flex-shrink: 0;
 }
 
-.refund-btn {
-  display: inline-flex;
+.chat-refund-banner:active {
+  background: rgba(234, 88, 12, 0.25);
+}
+
+.chat-refund-banner-content {
+  display: flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.4rem 1rem;
-  font-size: 0.8rem;
-  color: rgba(255, 100, 100, 0.85);
-  background: transparent;
-  border: 1px solid rgba(255, 100, 100, 0.3);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
+  gap: 0.65rem;
 }
-.refund-btn:hover {
-  color: #ff6464;
-  border-color: rgba(255, 100, 100, 0.6);
+
+.chat-refund-banner-icon {
+  font-size: 1.3rem;
 }
-.refund-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+
+.chat-refund-banner-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ea580c;
+  margin: 0;
+}
+
+.chat-refund-banner-sub {
+  font-size: 0.72rem;
+  color: rgba(234, 88, 12, 0.7);
+  margin: 0;
 }
 
 /* ── Validation Card ── */
@@ -1436,7 +1542,7 @@ select.input {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--color-border-custom);
   border-radius: 10px;
-  color: white;
+  color: var(--color-text);
   outline: none;
 }
 
@@ -1562,7 +1668,13 @@ select.input {
 
 /* ── App shell (reserve space for bottom nav) ── */
 .app-shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
   padding-bottom: 72px;
+}
+body.keyboard-open .app-shell {
+  padding-bottom: 0;
 }
 
 /* ── Bottom Navigation ── */
@@ -1946,6 +2058,30 @@ select.input {
   flex-shrink: 0;
 }
 
+.chat-cancel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.chat-cancel-btn:hover {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+.chat-cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ── Activity Location ── */
 .activity-card-location {
   font-size: 0.75rem;
@@ -2035,4 +2171,45 @@ select.input {
   z-index: 10000;
   width: 90%;
   max-width: 400px;
+}
+
+/* ── Theme Toggle ── */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.theme-toggle-track {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: var(--color-border-custom);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border: none;
+  padding: 0;
+}
+
+.theme-toggle-track.light {
+  background: var(--color-accent-cyan);
+}
+
+.theme-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  pointer-events: none;
+}
+
+.theme-toggle-track.light .theme-toggle-thumb {
+  transform: translateX(20px);
 }

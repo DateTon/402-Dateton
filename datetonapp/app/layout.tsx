@@ -1,6 +1,7 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 import Script from 'next/script'
+import { cookies } from 'next/headers'
 import './globals.css'
 import TonConnectProvider from '../components/TonConnectProvider'
 import { NavProvider } from '../components/NavContext'
@@ -11,13 +12,31 @@ export const metadata: Metadata = {
     description: 'Telegram Mini App DateTon',
 }
 
+export const viewport: Viewport = {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+}
+
 type RootLayoutProps = {
     children: ReactNode
 }
 
-export default function RootLayout({ children }: RootLayoutProps) {
+export default async function RootLayout({ children }: RootLayoutProps) {
+    const cookieStore = await cookies()
+    const theme = cookieStore.get('dateton_theme')?.value || 'dark'
+
     return (
-        <html lang="en" suppressHydrationWarning>
+        <html lang="en" data-theme={theme} suppressHydrationWarning>
+        <head>
+            <script dangerouslySetInnerHTML={{ __html: `
+                (function(){
+                    var t = document.cookie.match(/dateton_theme=([^;]+)/);
+                    if(t && t[1]) document.documentElement.setAttribute('data-theme', t[1]);
+                })();
+            `}} />
+        </head>
         <body suppressHydrationWarning>
         <Script
             src="https://telegram.org/js/telegram-web-app.js"

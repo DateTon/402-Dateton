@@ -93,6 +93,8 @@ export default function DateEscrowPage() {
                         const stateRes = await fetch(`/api/matches/${data.contractAddress}`);
                         if (stateRes.ok) setContractState(await stateRes.json());
                     } catch { /* contract may not be active yet */ }
+                } else {
+                    setContractState(null);
                 }
             }
         } catch { /* silent */ }
@@ -126,7 +128,7 @@ export default function DateEscrowPage() {
         const interval = setInterval(() => {
             fetchDetail();
             fetchDateSetup();
-        }, 5000);
+        }, 2500);
         return () => clearInterval(interval);
     }, [fetchDetail, fetchDateSetup]);
 
@@ -158,23 +160,28 @@ export default function DateEscrowPage() {
         setFunding(false);
     }
 
-    // Cancel date — refund on-chain + delete date_setup
+    // Cancel date — if funded: refund on-chain (0.02 TON fee) + clean DB, else just clean DB
     async function handleCancelDate() {
         setCancelling(true);
+        setError(null);
         try {
-            // Send refund transaction if contract exists
-            if (detail?.contractAddress) {
+            const hasFunded = (dateSetup?.fundedBy?.length ?? 0) > 0;
+
+            if (hasFunded && detail?.contractAddress) {
+                // Funds were sent — need on-chain refund
                 try {
                     const { buildRefundTransaction } = await import("../../../lib/contract");
                     const tx = buildRefundTransaction(detail.contractAddress);
                     await tonConnectUI.sendTransaction(tx);
                 } catch (e: unknown) {
                     const msg = e instanceof Error ? e.message : "";
-                    if (!msg.includes("Cancelled")) {
-                        // Refund tx failed but still clean up DB
+                    if (msg.includes("Cancelled")) {
+                        setCancelling(false);
+                        return; // User cancelled the tx, don't clean up
                     }
                 }
             }
+
             // Clean up date_setup + bid + match status
             await fetch("/api/date-setup", {
                 method: "POST",
@@ -263,10 +270,14 @@ export default function DateEscrowPage() {
 
     const otherName = detail.otherUser?.firstName ?? "your match";
     const amount = detail.escrowAmount ?? detail.bid?.amount ?? 0;
-    const state = contractState?.state ?? detail.status;
+    const onChainState = contractState?.state;
     const funded = contractState?.funded ?? 0;
-    const isReleased = state === "RELEASED";
-    const isRefunded = state === "REFUNDED";
+    // Only trust on-chain terminal states if dateSetup is in a matching terminal step
+    // (prevents stale contract from a previous cycle showing REFUNDED/RELEASED)
+    // Never show terminal on-chain states when there's an active dateSetup (new cycle)
+    // because the contract address is deterministic — same users+amount reuses the old contract
+    const isReleased = onChainState === "RELEASED" && !dateSetup;
+    const isRefunded = onChainState === "REFUNDED" && !dateSetup;
     const hasContract = !!detail.contractAddress;
     const myId = detail.myTelegramId;
     const step = dateSetup?.step ?? "fund";
@@ -323,6 +334,20 @@ export default function DateEscrowPage() {
                     ))}
                 </div>
 
+                {/* Back to previous step */}
+                {currentStepIndex > 0 && !isReleased && !isRefunded && (
+                    <button
+                        className="date-back-step-btn"
+                        onClick={() => dateSetupAction("go_back")}
+                        disabled={actionLoading}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M15 18l-6-6 6-6" />
+                        </svg>
+                        Back to {steps[currentStepIndex - 1]?.label}
+                    </button>
+                )}
+
                 {/* Final states */}
                 {isReleased && (
                     <div className="escrow-final escrow-final-success">
@@ -352,13 +377,18 @@ export default function DateEscrowPage() {
                                 <p>You have funded! Waiting for {otherName} to fund...</p>
                             </div>
                         ) : (
-                            <button className="button" onClick={handleFund} disabled={funding} style={{ width: "100%" }}>
-                                {funding ? (
-                                    <span className="loading loading-spinner loading-sm" />
-                                ) : (
-                                    `Fund ${amount} TON`
-                                )}
-                            </button>
+                            <>
+                                <button className="button" onClick={handleFund} disabled={funding} style={{ width: "100%" }}>
+                                    {funding ? (
+                                        <span className="loading loading-spinner loading-sm" />
+                                    ) : (
+                                        `Fund ${amount} TON`
+                                    )}
+                                </button>
+                                <p style={{ color: "var(--color-text-muted)", fontSize: "0.75rem", textAlign: "center", marginTop: "0.5rem" }}>
+                                    A platform fee of 0.05 TON per person is included in this transaction.
+                                </p>
+                            </>
                         )}
                     </div>
                 )}
@@ -595,7 +625,7 @@ export default function DateEscrowPage() {
                         onClick={handleCancelDate}
                         disabled={cancelling}
                     >
-                        {cancelling ? "Cancelling..." : "Cancel Date"}
+                        {cancelling ? "Cancelling..." : (dateSetup?.fundedBy?.length ?? 0) > 0 ? "Cancel Date (refund — 0.02 TON fee)" : "Cancel Date"}
                     </button>
                 )}
 

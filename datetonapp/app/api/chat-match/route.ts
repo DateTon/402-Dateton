@@ -46,8 +46,9 @@ export async function GET(req: NextRequest) {
     const messages = docs.map((doc) => ({
         id: doc._id.toString(),
         from: doc.from as number,
-        message: isEncrypted(doc.encryptedMessage) ? decryptText(doc.encryptedMessage) : '',
+        message: isEncrypted(doc.encryptedMessage) ? decryptText(doc.encryptedMessage) : (doc.message as string ?? ''),
         createdAt: doc.createdAt,
+        type: (doc.type as string) ?? 'user',
     }));
 
     return NextResponse.json({ messages });
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
     if (!telegramIdStr) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const telegramId = Number(telegramIdStr);
-    const { matchId, message } = (await req.json()) as { matchId: string; message: string };
+    const { matchId, message, type } = (await req.json()) as { matchId: string; message: string; type?: string };
 
     if (!matchId || !message?.trim()) {
         return NextResponse.json({ error: 'matchId and message required' }, { status: 400 });
@@ -76,14 +77,24 @@ export async function POST(req: NextRequest) {
     });
     if (!match) return NextResponse.json({ error: 'Match not found' }, { status: 404 });
 
-    const encrypted = encryptText(message.trim());
-
-    await db.collection('match_messages').insertOne({
-        matchId,
-        from: telegramId,
-        encryptedMessage: encrypted,
-        createdAt: new Date(),
-    });
+    if (type === 'system') {
+        // System messages are stored as plain text, not encrypted
+        await db.collection('match_messages').insertOne({
+            matchId,
+            from: 0, // system
+            message: message.trim(),
+            type: 'system',
+            createdAt: new Date(),
+        });
+    } else {
+        const encrypted = encryptText(message.trim());
+        await db.collection('match_messages').insertOne({
+            matchId,
+            from: telegramId,
+            encryptedMessage: encrypted,
+            createdAt: new Date(),
+        });
+    }
 
     return NextResponse.json({ ok: true });
 }
