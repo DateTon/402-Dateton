@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
                 matchId = result.insertedId.toString();
 
                 // Notify both users via Telegram (awaited so Vercel doesn't kill the function)
-                const matchUrl = `${process.env.NEXT_PUBLIC_APP_URL}/chat/${matchId}`;
+                const matchUrl = `https://t.me/DateTonBot/DateTon?startapp=chat_${matchId}`;
                 await Promise.allSettled([
                     sendTelegramMessage(
                         telegramId,

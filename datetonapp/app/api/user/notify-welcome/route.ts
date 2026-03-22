@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { sendTelegramMessage } from "../../../../lib/telegram";
 import { findUserByTelegramId } from "../../../../lib/db";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "";
+const MINIAPP_URL = "https://t.me/DateTonBot/DateTon";
 
 export async function POST() {
     try {
@@ -19,7 +19,7 @@ export async function POST() {
             telegramId,
             `\u{1F44B} <b>Bienvenue sur DateTon, ${user.firstName || "toi"} !</b>\n\n` +
             `Tu recevras ici tes notifications de match et de rendez-vous. \u{1F498}\n\n` +
-            `<a href="${APP_URL}">Ouvrir DateTon \u2192</a>`
+            `<a href="${MINIAPP_URL}">Ouvrir DateTon \u2192</a>`
         );
 
         return NextResponse.json({ ok: true });

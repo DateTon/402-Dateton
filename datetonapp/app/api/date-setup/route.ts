@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
             // Notify other user via Telegram
             if (otherTelegramId) {
                 const currentUser = await findUserByTelegramId(telegramId)
-                const chatUrl = `${process.env.NEXT_PUBLIC_APP_URL}/chat/${matchId}`
+                const chatUrl = `https://t.me/DateTonBot/DateTon?startapp=chat_${matchId}`
                 if (hasFunded) {
                     await sendTelegramMessage(
                         otherTelegramId,
@@ -300,7 +300,7 @@ export async function POST(req: NextRequest) {
 
         // If date achieved, notify both users via Telegram (awaited so Vercel doesn't kill the function)
         if (otherConfirmed) {
-            const chatUrl = `${process.env.NEXT_PUBLIC_APP_URL}/chat/${matchId}`
+            const chatUrl = `https://t.me/DateTonBot/DateTon?startapp=chat_${matchId}`
             const otherTelegramId = isUserA ? match.user2 : match.user1
             const [currentUser, otherUser] = await Promise.all([
                 findUserByTelegramId(telegramId),
