@@ -214,6 +214,16 @@ export default function HomePage() {
         tg.ready();
         tg.expand();
 
+        // Handle deep link: startapp=chat_MATCHID
+        const startParam = tg.initDataUnsafe?.start_param as string | undefined;
+        if (startParam?.startsWith("chat_")) {
+            const matchId = startParam.slice(5);
+            if (matchId) {
+                window.location.href = `/chat/${matchId}`;
+                return;
+            }
+        }
+
         const user = (tg.initDataUnsafe?.user as TelegramUser) || null;
         setTgUser(user);
         setState("LOADING");
@@ -448,9 +458,16 @@ export default function HomePage() {
     if (state === "DENIED") {
         return (
             <main className="page">
-                <section className="card">
+                <section className="card" style={{ textAlign: "center" }}>
                     <h1>Access denied</h1>
-                    <p>This app must be opened from Telegram.</p>
+                    <p style={{ marginBottom: "1rem" }}>This app must be opened from Telegram.</p>
+                    <a
+                        href="https://t.me/DateTonBot/DateTon"
+                        className="button"
+                        style={{ display: "inline-block", textDecoration: "none" }}
+                    >
+                        Open in Telegram
+                    </a>
                 </section>
             </main>
         );
