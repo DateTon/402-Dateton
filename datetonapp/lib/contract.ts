@@ -118,6 +118,8 @@ export function buildReleaseTransaction(contractAddress: string) {
  */
 export function buildRefundTransaction(contractAddress: string) {
     const addr = Address.parse(contractAddress).toString({ testOnly: true, bounceable: true });
+    const platformAddr = Address.parse(process.env.NEXT_PUBLIC_PLATFORM_WALLET_ADDRESS!)
+        .toString({ testOnly: true, bounceable: true });
 
     const body = beginCell()
         .storeUint(2910599901, 32)
@@ -129,6 +131,10 @@ export function buildRefundTransaction(contractAddress: string) {
         validUntil: Math.floor(Date.now() / 1000) + 600,
         network: CHAIN_TESTNET,
         messages: [
+            {
+                address: platformAddr,
+                amount: toNano("0.1").toString(),
+            },
             {
                 address: addr,
                 amount: toNano("0.02").toString(),
