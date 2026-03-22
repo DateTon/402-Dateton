@@ -448,7 +448,7 @@ export default function MatchChatPage() {
                         <span className="chat-refund-banner-icon">⏰</span>
                         <div>
                             <p className="chat-refund-banner-title">Validation window expired</p>
-                            <p className="chat-refund-banner-sub">Tap to request a refund (0.02 TON fee)</p>
+                            <p className="chat-refund-banner-sub">Tap to request a refund (0.12 TON fee)</p>
                         </div>
                     </div>
                     {refunding ? (
