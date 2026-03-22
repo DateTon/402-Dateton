@@ -438,7 +438,7 @@ export default function HomePage() {
             <main className={`splash ${splashFading ? "splash-fade-out" : ""}`}>
                 <div className="splash-content">
                     <Image
-                        src="/photo_2026-03-22_02-42-05.jpg"
+                        src="/logo.png"
                         alt="DateTon Logo"
                         width={80}
                         height={80}
