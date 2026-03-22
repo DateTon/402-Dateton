@@ -4,6 +4,9 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import ConnectWallet from '../components/ConnectWallet'
 import { useNav } from '../components/NavContext'
+import { useTonConnectUI } from "@tonconnect/ui-react";
+import { toNano, Address } from "@ton/ton";
+import ThemeToggle from '../components/ThemeToggle';
 
 
 type TelegramUser = {
@@ -55,6 +58,7 @@ let splashShownOnce = false;
 
 export default function HomePage() {
     const { setNavVisible } = useNav();
+    const [tonConnectUI] = useTonConnectUI();
     const skipSplash = splashShownOnce;
     const [state, setState] = useState<AppState>(skipSplash ? "LOADING" : "SPLASH");
     const [tgUser, setTgUser] = useState<TelegramUser | null>(null);
@@ -78,6 +82,8 @@ export default function HomePage() {
     const [toast, setToast] = useState<string | null>(null);
     const [walletAddress, setWalletAddress] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
+    const [boosting, setBoosting] = useState(false);
+    const [boostedUntil, setBoostedUntil] = useState<string | null>(null);
     const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     const showToast = useCallback((msg: string) => {
@@ -144,6 +150,42 @@ export default function HomePage() {
             setSubmitting(false);
         }
     }
+
+    async function handleBoost() {
+        const payTo = process.env.NEXT_PUBLIC_PAYMENT_ADDRESS;
+        if (!payTo) {
+            showToast("Payment address not configured.");
+            return;
+        }
+        setBoosting(true);
+        try {
+            // Step 1: Send 1 TON via TonConnect
+            const addr = Address.parse(payTo).toString({ testOnly: true, bounceable: true });
+            await tonConnectUI.sendTransaction({
+                validUntil: Math.floor(Date.now() / 1000) + 600,
+                network: "-3",
+                messages: [{
+                    address: addr,
+                    amount: toNano("1").toString(),
+                }],
+            });
+            // Step 2: Activate boost in DB
+            const res = await fetch("/api/boost", { method: "POST" });
+            const data = await res.json();
+            if (!res.ok) {
+                showToast(data.error || "Boost failed.");
+                return;
+            }
+            setBoostedUntil(data.boostedUntil);
+            showToast("Profile boosted for 1 hour!");
+        } catch {
+            showToast("Payment cancelled or failed.");
+        } finally {
+            setBoosting(false);
+        }
+    }
+
+    const isBoosted = boostedUntil && new Date(boostedUntil).getTime() > Date.now();
 
     // Splash screen timer (skipped on return navigation)
     useEffect(() => {
@@ -355,6 +397,16 @@ export default function HomePage() {
 
             setAppUser(data.user);
             setState("HOME");
+
+            // Request permission to send Telegram notifications
+            const tgWebApp = (window as any)?.Telegram?.WebApp;
+            if (tgWebApp?.requestWriteAccess) {
+                tgWebApp.requestWriteAccess((granted: boolean) => {
+                    if (granted) {
+                        fetch("/api/user/notify-welcome", { method: "POST" });
+                    }
+                });
+            }
         } catch {
             showToast("Connection error.");
             setSubmitting(false);
@@ -376,7 +428,7 @@ export default function HomePage() {
             <main className={`splash ${splashFading ? "splash-fade-out" : ""}`}>
                 <div className="splash-content">
                     <Image
-                        src="/logo-text-white.png"
+                        src="/photo_2026-03-22_02-42-05.jpg"
                         alt="DateTon Logo"
                         width={80}
                         height={80}
@@ -385,7 +437,7 @@ export default function HomePage() {
                     />
                     <h1 className="splash-title">DateTon</h1>
                     <p className="splash-desc">
-                        Find your date, secured by blockchain.
+                        Find your next date
                     </p>
                 </div>
             </main>
@@ -669,6 +721,10 @@ export default function HomePage() {
                             <div style={{ marginBottom: '1rem' }}>
                                 <p style={{ marginBottom: '0.5rem' }}>Connect your TON wallet :</p>
                                 <ConnectWallet onWalletChange={setWalletAddress} />
+                            </div>
+
+                            <div style={{ marginBottom: '1rem' }}>
+                                <ThemeToggle />
                             </div>
 
                             <button
@@ -997,30 +1053,44 @@ export default function HomePage() {
         <main className="page">
             <section className="card profile-card">
                 <div className="profile-header">
-                    {appUser?.images?.[0] ? (
-                        <img
-                            src={appUser.images[0]}
-                            alt="Profile"
-                            className="profile-avatar"
-                        />
-                    ) : (
-                        <div className="profile-avatar-placeholder">
-                            {appUser?.firstName?.charAt(0)?.toUpperCase() || "?"}
+                    <div className="profile-header-left">
+                        {appUser?.images?.[0] ? (
+                            <img
+                                src={appUser.images[0]}
+                                alt="Profile"
+                                className="profile-avatar"
+                            />
+                        ) : (
+                            <div className="profile-avatar-placeholder">
+                                {appUser?.firstName?.charAt(0)?.toUpperCase() || "?"}
+                            </div>
+                        )}
+                        <div>
+                            <h1 className="profile-name">
+                                {appUser?.firstName} {appUser?.lastName}
+                            </h1>
+                            <button type="button" className="edit-profile-btn" onClick={handleEditProfile}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
+                                Edit profile
+                            </button>
                         </div>
-                    )}
-                    <div>
-                        <h1 className="profile-name">
-                            {appUser?.firstName} {appUser?.lastName}
-                        </h1>
-                        <button type="button" className="edit-profile-btn" onClick={handleEditProfile}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                            </svg>
-                            Edit profile
-                        </button>
                     </div>
+                    <ThemeToggle />
                 </div>
+
+                {isBoosted ? (
+                    <p className="boost-active">Your profile is boosted until {new Date(boostedUntil).toLocaleTimeString()}</p>
+                ) : (
+                    <button type="button" className="boost-btn" disabled={boosting} onClick={handleBoost}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                        </svg>
+                        {boosting ? "Boosting..." : "Boost profile (1 TON / 1h)"}
+                    </button>
+                )}
 
                 <div className="profile-details">
                     {appUser?.age && (

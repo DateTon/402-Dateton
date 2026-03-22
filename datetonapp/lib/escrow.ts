@@ -32,11 +32,12 @@ export async function deployEscrowContract(params: {
 
     const seqno = await wallet.getSeqno();
 
-    // Build the DateEscrow contract with init params
+    // Build the DateEscrow contract with init params (nonce ensures unique address per cycle)
     const escrow = await DateEscrow.fromInit(
         Address.parse(params.wallet1),
         Address.parse(params.wallet2),
         toNano(params.amountTon.toString()),
+        BigInt(Date.now()),
     );
 
     const contractAddress = escrow.address.toString({ testOnly: true, bounceable: true });

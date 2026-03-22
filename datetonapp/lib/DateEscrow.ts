@@ -884,6 +884,7 @@ export type DateEscrow$Data = {
     userA: Address;
     userB: Address;
     amountPerUser: bigint;
+    nonce: bigint;
     fundedA: boolean;
     fundedB: boolean;
     confirmA: boolean;
@@ -898,6 +899,7 @@ export function storeDateEscrow$Data(src: DateEscrow$Data) {
         b_0.storeAddress(src.userA);
         b_0.storeAddress(src.userB);
         b_0.storeCoins(src.amountPerUser);
+        b_0.storeUint(src.nonce, 64);
         b_0.storeBit(src.fundedA);
         b_0.storeBit(src.fundedB);
         b_0.storeBit(src.confirmA);
@@ -912,39 +914,42 @@ export function loadDateEscrow$Data(slice: Slice) {
     const _userA = sc_0.loadAddress();
     const _userB = sc_0.loadAddress();
     const _amountPerUser = sc_0.loadCoins();
+    const _nonce = sc_0.loadUintBig(64);
     const _fundedA = sc_0.loadBit();
     const _fundedB = sc_0.loadBit();
     const _confirmA = sc_0.loadBit();
     const _confirmB = sc_0.loadBit();
     const _released = sc_0.loadBit();
     const _refunded = sc_0.loadBit();
-    return { $$type: 'DateEscrow$Data' as const, userA: _userA, userB: _userB, amountPerUser: _amountPerUser, fundedA: _fundedA, fundedB: _fundedB, confirmA: _confirmA, confirmB: _confirmB, released: _released, refunded: _refunded };
+    return { $$type: 'DateEscrow$Data' as const, userA: _userA, userB: _userB, amountPerUser: _amountPerUser, nonce: _nonce, fundedA: _fundedA, fundedB: _fundedB, confirmA: _confirmA, confirmB: _confirmB, released: _released, refunded: _refunded };
 }
 
 export function loadTupleDateEscrow$Data(source: TupleReader) {
     const _userA = source.readAddress();
     const _userB = source.readAddress();
     const _amountPerUser = source.readBigNumber();
+    const _nonce = source.readBigNumber();
     const _fundedA = source.readBoolean();
     const _fundedB = source.readBoolean();
     const _confirmA = source.readBoolean();
     const _confirmB = source.readBoolean();
     const _released = source.readBoolean();
     const _refunded = source.readBoolean();
-    return { $$type: 'DateEscrow$Data' as const, userA: _userA, userB: _userB, amountPerUser: _amountPerUser, fundedA: _fundedA, fundedB: _fundedB, confirmA: _confirmA, confirmB: _confirmB, released: _released, refunded: _refunded };
+    return { $$type: 'DateEscrow$Data' as const, userA: _userA, userB: _userB, amountPerUser: _amountPerUser, nonce: _nonce, fundedA: _fundedA, fundedB: _fundedB, confirmA: _confirmA, confirmB: _confirmB, released: _released, refunded: _refunded };
 }
 
 export function loadGetterTupleDateEscrow$Data(source: TupleReader) {
     const _userA = source.readAddress();
     const _userB = source.readAddress();
     const _amountPerUser = source.readBigNumber();
+    const _nonce = source.readBigNumber();
     const _fundedA = source.readBoolean();
     const _fundedB = source.readBoolean();
     const _confirmA = source.readBoolean();
     const _confirmB = source.readBoolean();
     const _released = source.readBoolean();
     const _refunded = source.readBoolean();
-    return { $$type: 'DateEscrow$Data' as const, userA: _userA, userB: _userB, amountPerUser: _amountPerUser, fundedA: _fundedA, fundedB: _fundedB, confirmA: _confirmA, confirmB: _confirmB, released: _released, refunded: _refunded };
+    return { $$type: 'DateEscrow$Data' as const, userA: _userA, userB: _userB, amountPerUser: _amountPerUser, nonce: _nonce, fundedA: _fundedA, fundedB: _fundedB, confirmA: _confirmA, confirmB: _confirmB, released: _released, refunded: _refunded };
 }
 
 export function storeTupleDateEscrow$Data(source: DateEscrow$Data) {
@@ -952,6 +957,7 @@ export function storeTupleDateEscrow$Data(source: DateEscrow$Data) {
     builder.writeAddress(source.userA);
     builder.writeAddress(source.userB);
     builder.writeNumber(source.amountPerUser);
+    builder.writeNumber(source.nonce);
     builder.writeBoolean(source.fundedA);
     builder.writeBoolean(source.fundedB);
     builder.writeBoolean(source.confirmA);
@@ -977,6 +983,7 @@ export function dictValueParserDateEscrow$Data(): DictionaryValue<DateEscrow$Dat
     userA: Address;
     userB: Address;
     amountPerUser: bigint;
+    nonce: bigint;
 }
 
 function initDateEscrow_init_args(src: DateEscrow_init_args) {
@@ -985,14 +992,17 @@ function initDateEscrow_init_args(src: DateEscrow_init_args) {
         b_0.storeAddress(src.userA);
         b_0.storeAddress(src.userB);
         b_0.storeInt(src.amountPerUser, 257);
+        const b_1 = new Builder();
+        b_1.storeInt(src.nonce, 257);
+        b_0.storeRef(b_1.endCell());
     };
 }
 
-async function DateEscrow_init(userA: Address, userB: Address, amountPerUser: bigint) {
-    const __code = Cell.fromHex('b5ee9c72410215010005760003eaff008e88f4a413f4bcf2c80bed53208f6030eda2edfb01d072d721d200d200fa4021103450666f04f86102f862ed44d0d200018e16fa40fa40fa00d200d200d200d200d200d20055806c198e14fa40fa40810101d700552003d158707070707070e20a925f0ae028d749c21fe30008f901e1ed43d9010911020271020702014803050177b792bda89a1a400031c2df481f481f401a401a401a401a401a401a400ab00d8331c29f481f481020203ae00aa4007a2b0e0e0e0e0e0e1c5b678d92300400147026923071de2591a4de0177b5e2bda89a1a400031c2df481f481f401a401a401a401a401a401a400ab00d8331c29f481f481020203ae00aa4007a2b0e0e0e0e0e0e1c5b678d9230060082209a8b8524546554e4445448e0219a8b852454c45415345448e02591249170e2988b646554e4445448e025917f9124e2998b75041525449414c8e08b44f50454e80177bece876a268690000c70b7d207d207d006900690069006900690069002ac0360cc70a7d207d20408080eb802a9001e8ac383838383838716d9e3648c0800147024923071de2391a4de03fc08d31f218210a86dd47dba8f685b814af228b3f2f48142fe29b3f2f4f8425307c7058e44308154a404b314f2f4812764f8416f24135f0325bef2f41057104610357f44554313c87f01ca0055805089ce16ce5004fa0212ca00ca00ca00ca00ca00ca00c9ed54db31e026c705e302f2c19110685515e0218210cc179a0dba0a0f0b008681280c03b313f2f4812764f8416f24135f0325bef2f410571046103510247f5034c87f01ca0055805089ce16ce5004fa0212ca00ca00ca00ca00ca00ca00c9ed54db3104fee302218210ad7c3addba8f725b814af228b3f2f48142fe09b319f2f4f84281080b5317c70592317f945116c705e2f2f47f238e3c53647070036d6d50436d5033c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00de22e30010681057104610354430e00c0e0f1001fe5b8165bd2491239170e2f2f4814af228b3f2f48142fe29b3f2f4f8425307c7058e2f303110571046103544307f4133c87f01ca0055805089ce16ce5004fa0212ca00ca00ca00ca00ca00ca00c9ed54db31e026c7058e273055157f02c87f01ca0055805089ce16ce5004fa0212ca00ca00ca00ca00ca00ca00c9ed54db31e00d0052f2c19110685515c87f01ca0055805089ce16ce5004fa0212ca00ca00ca00ca00ca00ca00c9ed54db31007853547070036d6d50436d5033c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb000044c87f01ca0055805089ce16ce5004fa0212ca00ca00ca00ca00ca00ca00c9ed54db3100dc018210946a98b6ba8e62d33f30c8018210aff90f5758cb1fcb3fc9107910681057104610354430f84270705003804201503304c8cf8580ca00cf8440ce01fa02806acf40f400c901fb00c87f01ca0055805089ce16ce5004fa0212ca00ca00ca00ca00ca00ca00c9ed54db31e008015482f01e71243d50769790a94ac0ad43e6828df1bb4ab4ba488273d15f41a0116aa507bae3025f09f2c0821202fe8165bd2491239170e2f2f48118df2291219170e2f2f4814af208b318f2f48142fe28b3f2f47ff8276f10820afaf080a120ab0052807070036d6d50436d5033c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00ab0052607070036d6d50436d5033c889131400016000b2cf16ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb001068105710461035440302c87f01ca0055805089ce16ce5004fa0212ca00ca00ca00ca00ca00ca00c9ed54c48bb15a');
+async function DateEscrow_init(userA: Address, userB: Address, amountPerUser: bigint, nonce: bigint) {
+    const __code = Cell.fromHex('b5ee9c72410216010005a80004feff008e88f4a413f4bcf2c80bed53208f6d30eda2edfb01d072d721d200d200fa4021103450666f04f86102f862ed44d0d200018e18fa40fa40fa00d33fd200d200d200d200d200d20055906c1a8e1ffa40fa40810101d700d401d0810101d7003014433004d15502707070707070e20b925f0be029d749c21fe30009f901e101091115020271020702014803050191b792bda89a1a400031c31f481f481f401a67fa401a401a401a401a401a400ab20d8351c3ff481f481020203ae01a803a1020203ae006028866009a2aa04e0e0e0e0e0e1c5b678d94300400147026923071de2591a4de0191b5e2bda89a1a400031c31f481f481f401a67fa401a401a401a401a401a400ab20d8351c3ff481f481020203ae01a803a1020203ae006028866009a2aa04e0e0e0e0e0e1c5b678d9430060082209a8b8524546554e4445448e0219a8b852454c45415345448e02591249170e2988b646554e4445448e025917f9124e2998b75041525449414c8e08b44f50454e80191bece876a268690000c70c7d207d207d00699fe900690069006900690069002ac8360d470ffd207d20408080eb806a00e8408080eb80180a21980268aa81383838383838716d9e3650c0800147024923071de2391a4de03f409d31f218210a86dd47dba8f6b5b814af229b3f2f48142fe2ab3f2f4f8425308c7058e47308154a404b314f2f4812764f8416f24135f0326bef2f410681057104610357f443512c87f01ca005590509ace17ce5005fa0213cb3fca00ca00ca00ca00ca00ca00c9ed54db31e027c705e302f2c19110795516e0210a0f0b009081280c03b313f2f4812764f8416f24135f0326bef2f4106810571046103510247f504403c87f01ca005590509ace17ce5005fa0213cb3fca00ca00ca00ca00ca00ca00c9ed54db3104fc8210cc179a0dba8f625b8165bd2491239170e2f2f4814af229b3f2f48142fe2ab3f2f4f8425308c7058e333031106810571046103544307f5023c87f01ca005590509ace17ce5005fa0213cb3fca00ca00ca00ca00ca00ca00c9ed54db31e027c705e302f2c19110795516e0218210ad7c3addbae302018210946a98b6ba0c0f0d10005630106855157f59c87f01ca005590509ace17ce5005fa0213cb3fca00ca00ca00ca00ca00ca00c9ed54db3102ea5b814af229b3f2f48142fe0ab31af2f4f84281080b5318c70592317f945117c705e2f2f47f238e3c53757070036d6d50436d5033c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00de22e300107910681057104610354430120e0f007853657070036d6d50436d5033c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb000048c87f01ca005590509ace17ce5005fa0213cb3fca00ca00ca00ca00ca00ca00c9ed54db3100d68e67d33f30c8018210aff90f5758cb1fcb3fc9108a10791068105710461035443012f84270705003804201503304c8cf8580ca00cf8440ce01fa02806acf40f400c901fb00c87f01ca005590509ace17ce5005fa0213cb3fca00ca00ca00ca00ca00ca00c9ed54db31e009015482f01e71243d50769790a94ac0ad43e6828df1bb4ab4ba488273d15f41a0116aa507bae3025f0af2c0821202fe8165bd2491239170e2f2f48118df2291219170e2f2f4814af209b319f2f48142fe29b3f2f47ff8276f10820afaf080a120ab0052907070036d6d50436d5033c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00ab0052707070036d6d50436d5033c889131400016000b8cf16ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00107910681057104610354403c87f01ca005590509ace17ce5005fa0213cb3fca00ca00ca00ca00ca00ca00c9ed540006ed43d9806d7bb2');
     const builder = beginCell();
     builder.storeUint(0, 1);
-    initDateEscrow_init_args({ $$type: 'DateEscrow_init_args', userA, userB, amountPerUser })(builder);
+    initDateEscrow_init_args({ $$type: 'DateEscrow_init_args', userA, userB, amountPerUser, nonce })(builder);
     const __data = builder.endCell();
     return { code: __code, data: __data };
 }
@@ -1108,7 +1118,7 @@ const DateEscrow_types: ABIType[] = [
     {"name":"Fund","header":2825770109,"fields":[]},
     {"name":"ConfirmRelease","header":3424098829,"fields":[]},
     {"name":"Refund","header":2910599901,"fields":[]},
-    {"name":"DateEscrow$Data","header":null,"fields":[{"name":"userA","type":{"kind":"simple","type":"address","optional":false}},{"name":"userB","type":{"kind":"simple","type":"address","optional":false}},{"name":"amountPerUser","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"fundedA","type":{"kind":"simple","type":"bool","optional":false}},{"name":"fundedB","type":{"kind":"simple","type":"bool","optional":false}},{"name":"confirmA","type":{"kind":"simple","type":"bool","optional":false}},{"name":"confirmB","type":{"kind":"simple","type":"bool","optional":false}},{"name":"released","type":{"kind":"simple","type":"bool","optional":false}},{"name":"refunded","type":{"kind":"simple","type":"bool","optional":false}}]},
+    {"name":"DateEscrow$Data","header":null,"fields":[{"name":"userA","type":{"kind":"simple","type":"address","optional":false}},{"name":"userB","type":{"kind":"simple","type":"address","optional":false}},{"name":"amountPerUser","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"nonce","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"fundedA","type":{"kind":"simple","type":"bool","optional":false}},{"name":"fundedB","type":{"kind":"simple","type":"bool","optional":false}},{"name":"confirmA","type":{"kind":"simple","type":"bool","optional":false}},{"name":"confirmB","type":{"kind":"simple","type":"bool","optional":false}},{"name":"released","type":{"kind":"simple","type":"bool","optional":false}},{"name":"refunded","type":{"kind":"simple","type":"bool","optional":false}}]},
 ]
 
 const DateEscrow_opcodes = {
@@ -1147,12 +1157,12 @@ export class DateEscrow implements Contract {
     public static readonly errors = DateEscrow_errors_backward;
     public static readonly opcodes = DateEscrow_opcodes;
     
-    static async init(userA: Address, userB: Address, amountPerUser: bigint) {
-        return await DateEscrow_init(userA, userB, amountPerUser);
+    static async init(userA: Address, userB: Address, amountPerUser: bigint, nonce: bigint) {
+        return await DateEscrow_init(userA, userB, amountPerUser, nonce);
     }
     
-    static async fromInit(userA: Address, userB: Address, amountPerUser: bigint) {
-        const __gen_init = await DateEscrow_init(userA, userB, amountPerUser);
+    static async fromInit(userA: Address, userB: Address, amountPerUser: bigint, nonce: bigint) {
+        const __gen_init = await DateEscrow_init(userA, userB, amountPerUser, nonce);
         const address = contractAddress(0, __gen_init);
         return new DateEscrow(address, __gen_init);
     }

@@ -3,13 +3,14 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useTonConnectUI } from "@tonconnect/ui-react";
-import { buildRefundTransaction, buildConfirmTransaction } from "../../../lib/contract";
+import { buildRefundTransaction, buildConfirmTransaction, buildReleaseTransaction } from "../../../lib/contract";
 
 type Message = {
     id: string;
     from: number;
     message: string;
     createdAt: string;
+    type?: "user" | "system";
 };
 
 type Bid = {
@@ -61,6 +62,8 @@ export default function MatchChatPage() {
     const [hasConfirmed, setHasConfirmed] = useState(false);
     const [partnerConfirmed, setPartnerConfirmed] = useState(false);
     const [accomplishedDate, setAccomplishedDate] = useState(false);
+
+    const chatInputRef = useRef<HTMLInputElement>(null);
 
     // Fetch current user
     useEffect(() => {
@@ -135,24 +138,40 @@ export default function MatchChatPage() {
         } catch { /* silent */ }
     }, [matchId]);
 
-    async function handleRefund() {
-        if (!contractAddress) return;
+    async function handleCancel() {
         setRefunding(true);
         try {
-            const tx = buildRefundTransaction(contractAddress);
-            await tonConnectUI.sendTransaction(tx);
-            // Clean up date_setup after successful refund
+            // If funded, attempt on-chain refund first
+            if (contractAddress) {
+                try {
+                    const tx = buildRefundTransaction(contractAddress);
+                    await tonConnectUI.sendTransaction(tx);
+                } catch (e: unknown) {
+                    const msg = (e as Error)?.message || "";
+                    if (msg.includes("Cancelled")) {
+                        setRefunding(false);
+                        return; // User cancelled the wallet popup — don't clean up
+                    }
+                    // On-chain tx failed but we still clean up DB below
+                }
+            }
+            // Always clean up date_setup, bid, match status
             await fetch("/api/date-setup", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ matchId, action: "cancel_date" }),
             });
-            setRefundToast("Refund transaction sent!");
+            setRefundToast(contractAddress ? "Refund transaction sent!" : "Date cancelled.");
             setDateSetup(null);
             setBid(null);
             setContractAddress(null);
-        } catch (e: any) {
-            setRefundToast(e?.message || "Refund failed.");
+            setAccomplishedDate(false);
+            setHasConfirmed(false);
+            setPartnerConfirmed(false);
+            setShowValidation(false);
+            await fetchMessages();
+        } catch (e: unknown) {
+            setRefundToast((e as Error)?.message || "Cancel failed.");
         }
         setRefunding(false);
         setTimeout(() => setRefundToast(null), 3000);
@@ -162,12 +181,11 @@ export default function MatchChatPage() {
     function isInValidationWindow(): boolean {
         if (!dateSetup?.proposedDate || dateSetup.step !== "done") return false;
         const { date, time } = dateSetup.proposedDate;
-        const [hh, mm] = time.split(":").map(Number);
         const dateTime = new Date(`${date}T${time}:00`);
         const now = Date.now();
 
-        let windowStart = dateTime.getTime() - 60 * 60 * 1000; // 1h before
-        let windowEnd = dateTime.getTime() + 60 * 60 * 1000; // 1h after
+        let windowStart = dateTime.getTime() - 1 * 60 * 1000; // 1min before
+        let windowEnd = dateTime.getTime() + 1 * 60 * 1000; // 1min after
 
         // Adjust to activity schedule if available
         const schedule = dateSetup.selectedActivity?.schedule;
@@ -188,6 +206,34 @@ export default function MatchChatPage() {
         }
 
         return now >= windowStart && now <= windowEnd;
+    }
+
+    function isAfterValidationWindow(): boolean {
+        if (!dateSetup?.proposedDate || dateSetup.step !== "done") return false;
+        const { date, time } = dateSetup.proposedDate;
+        const dateTime = new Date(`${date}T${time}:00`);
+        const now = Date.now();
+
+        let windowEnd = dateTime.getTime() + 1 * 60 * 1000;
+
+        const schedule = dateSetup.selectedActivity?.schedule;
+        if (schedule) {
+            const d = new Date(`${date}T00:00:00`);
+            const jsDay = d.getDay();
+            const idx = jsDay === 0 ? 6 : jsDay - 1;
+            const slot = schedule[idx];
+            if (slot) {
+                const closeMatch = slot[1].match(/^(\d{1,2})h(\d{2})$/);
+                if (closeMatch) {
+                    const closeH = parseInt(closeMatch[1]);
+                    const closeM = parseInt(closeMatch[2]);
+                    const closeTime = new Date(`${date}T${String(closeH).padStart(2, "0")}:${String(closeM).padStart(2, "0")}:00`).getTime();
+                    if (windowEnd > closeTime) windowEnd = closeTime;
+                }
+            }
+        }
+
+        return now > windowEnd;
     }
 
     // Fetch codes for validation
@@ -232,9 +278,27 @@ export default function MatchChatPage() {
                 try {
                     const tx = buildConfirmTransaction(contractAddress);
                     await tonConnectUI.sendTransaction(tx);
-                } catch (e: any) {
-                    // Transaction may fail but code validation is done
+                } catch (e: unknown) {
                     console.error("ConfirmRelease tx error:", e);
+                }
+                // If both confirmed, send the "release" text message to actually release funds
+                if (data.accomplishedDate) {
+                    try {
+                        const releaseTx = buildReleaseTransaction(contractAddress);
+                        await tonConnectUI.sendTransaction(releaseTx);
+                    } catch (e: unknown) {
+                        console.error("Release tx error:", e);
+                    }
+                    // Insert system message
+                    await fetch("/api/chat-match", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            matchId,
+                            message: `date achieved the ${dateSetup?.proposedDate?.date} at ${dateSetup?.proposedDate?.time}`,
+                            type: "system",
+                        }),
+                    });
                 }
             }
             setHasConfirmed(true);
@@ -269,7 +333,7 @@ export default function MatchChatPage() {
             fetchMessages();
             fetchBid();
             fetchDateSetup();
-        }, 3000);
+        }, 1500);
         return () => clearInterval(interval);
     }, [fetchMatchInfo, fetchMessages, fetchBid, fetchContractAddress, fetchDateSetup]);
 
@@ -377,27 +441,60 @@ export default function MatchChatPage() {
                 <span className="chat-header-name">{otherName}</span>
             </div>
 
-            {/* Date banner when date is set */}
-            {dateSetup?.step === "done" && dateSetup.selectedActivity && dateSetup.proposedDate && (
-                <div className="chat-date-banner" onClick={handleBannerClick} style={{ cursor: "pointer" }}>
-                    <div className="chat-date-banner-info">
-                        <span className="chat-date-banner-title">
-                            {(accomplishedDate || dateSetup.accomplishedDate) ? "Date Accomplished!" : dateSetup.selectedActivity.name}
-                        </span>
-                        <span className="chat-date-banner-location">
-                            {dateSetup.selectedActivity.location.name}, {dateSetup.selectedActivity.location.city}
-                        </span>
+            {/* Refund banner — replaces date banner after validation window */}
+            {contractAddress && !accomplishedDate && !dateSetup?.accomplishedDate && isAfterValidationWindow() ? (
+                <div className="chat-refund-banner" onClick={handleCancel}>
+                    <div className="chat-refund-banner-content">
+                        <span className="chat-refund-banner-icon">⏰</span>
+                        <div>
+                            <p className="chat-refund-banner-title">Validation window expired</p>
+                            <p className="chat-refund-banner-sub">Tap to request a refund (0.02 TON fee)</p>
+                        </div>
                     </div>
-                    <span className="chat-date-banner-datetime">
-                        {dateSetup.proposedDate.date} - {dateSetup.proposedDate.time}
-                    </span>
-                    {!(accomplishedDate || dateSetup.accomplishedDate) && (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    {refunding ? (
+                        <span className="loading loading-spinner loading-sm"></span>
+                    ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M9 18l6-6-6-6" />
                         </svg>
                     )}
                 </div>
-            )}
+            ) : dateSetup && dateSetup.step !== undefined && !(accomplishedDate || dateSetup.accomplishedDate) ? (
+                <div className="chat-date-banner" style={{ cursor: "pointer" }}>
+                    {dateSetup.step === "done" && dateSetup.selectedActivity && dateSetup.proposedDate ? (
+                        <div className="chat-date-banner-info" onClick={handleBannerClick}>
+                            <span className="chat-date-banner-title">
+                                {dateSetup.selectedActivity.name}
+                            </span>
+                            <span className="chat-date-banner-location">
+                                {dateSetup.selectedActivity.location.name}, {dateSetup.selectedActivity.location.city}
+                            </span>
+                            <span className="chat-date-banner-datetime">
+                                {dateSetup.proposedDate.date} - {dateSetup.proposedDate.time}
+                            </span>
+                        </div>
+                    ) : (
+                        <div className="chat-date-banner-info">
+                            <span className="chat-date-banner-title">Date in progress</span>
+                            <span className="chat-date-banner-location">Setting up your date...</span>
+                        </div>
+                    )}
+                    <button
+                        className="chat-cancel-btn"
+                        onClick={(e) => { e.stopPropagation(); handleCancel(); }}
+                        disabled={refunding}
+                        title="Cancel date"
+                    >
+                        {refunding ? (
+                            <span className="loading loading-spinner loading-sm"></span>
+                        ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M18 6L6 18M6 6l12 12" />
+                            </svg>
+                        )}
+                    </button>
+                </div>
+            ) : null}
 
             {/* Code validation overlay */}
             {showValidation && (
@@ -463,6 +560,13 @@ export default function MatchChatPage() {
                 )}
 
                 {messages.map((msg) => {
+                    if (msg.type === "system") {
+                        return (
+                            <div key={msg.id} className="chat-system-msg">
+                                <em>{msg.message}</em>
+                            </div>
+                        );
+                    }
                     const isMe = msg.from === myTelegramId;
                     return (
                         <div key={msg.id} className={`chat-bubble ${isMe ? "chat-bubble-me" : "chat-bubble-them"}`}>
@@ -567,8 +671,7 @@ export default function MatchChatPage() {
 
             {/* Input bar with + button */}
             <div className="chat-input-bar">
-                {/* Show + only when no bid exists, or after date is fully done */}
-                {(!bid || bid.status === "rejected" || dateSetup?.step === "done") && (
+                {(!bid || bid.status === "rejected" || (dateSetup?.accomplishedDate || accomplishedDate)) && (
                     <button
                         className="chat-plus-btn"
                         onClick={() => setShowBidPopup(true)}
@@ -580,6 +683,7 @@ export default function MatchChatPage() {
                     </button>
                 )}
                 <input
+                    ref={chatInputRef}
                     className="chat-input"
                     type="text"
                     placeholder="Type a message..."
@@ -601,24 +705,7 @@ export default function MatchChatPage() {
                 </button>
             </div>
 
-            {/* Refund button */}
-            {contractAddress && (
-                <div className="chat-refund-bar">
-                    <button
-                        className="refund-btn"
-                        onClick={handleRefund}
-                        disabled={refunding}
-                    >
-                        {refunding ? (
-                            <span className="loading loading-spinner loading-sm"></span>
-                        ) : (
-                            "\uD83D\uDD01 Refund"
-                        )}
-                    </button>
-                </div>
-            )}
-
-            {/* Refund toast */}
+            {/* Toast */}
             {refundToast && (
                 <div className="toast-container">
                     <div className="alert alert-info shadow-lg">

@@ -21,13 +21,18 @@ export default function MatchesPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch("/api/my-matches")
-            .then((r) => r.json())
-            .then((data) => {
-                if (Array.isArray(data)) setMatches(data);
-            })
-            .catch(() => {})
-            .finally(() => setLoading(false));
+        function fetchMatches() {
+            fetch("/api/my-matches")
+                .then((r) => r.json())
+                .then((data) => {
+                    if (Array.isArray(data)) setMatches(data);
+                })
+                .catch(() => {})
+                .finally(() => setLoading(false));
+        }
+        fetchMatches();
+        const interval = setInterval(fetchMatches, 5000);
+        return () => clearInterval(interval);
     }, []);
 
     if (loading) {

@@ -72,6 +72,9 @@ export async function GET() {
             const interests = (doc.interests as string[]) ?? [];
             const sharedInterests = interests.filter((i) => myInterests.has(i.toLowerCase()));
 
+            const boostedUntil = doc.boostedUntil ? new Date(doc.boostedUntil) : null;
+            const boosted = !!boostedUntil && boostedUntil.getTime() > Date.now();
+
             return {
                 telegramId: doc.telegramId as number,
                 firstName: safeDecrypt(doc.firstName),
@@ -84,6 +87,7 @@ export async function GET() {
                 images: safeDecryptArray(doc.images),
                 score: sharedInterests.length,
                 sharedInterests,
+                boosted,
             };
         })
         .filter((u) => {
@@ -91,8 +95,11 @@ export async function GET() {
             if (currentUser.interestedIn.length === 0) return true;
             return currentUser.interestedIn.includes(u.gender);
         })
-        // Rank by shared interests (highest first), then alphabetically
-        .sort((a, b) => b.score - a.score || a.firstName.localeCompare(b.firstName));
+        // Boosted profiles first, then by shared interests, then alphabetically
+        .sort((a, b) => {
+            if (a.boosted !== b.boosted) return a.boosted ? -1 : 1;
+            return b.score - a.score || a.firstName.localeCompare(b.firstName);
+        });
 
     return NextResponse.json(profiles);
 }

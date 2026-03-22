@@ -31,24 +31,21 @@ export async function POST(req: NextRequest) {
         if (!amount || isNaN(Number(amount))) {
             return NextResponse.json({ error: 'Valid amount required' }, { status: 400 })
         }
-        await db.collection('bids').updateOne(
-            { matchId },
-            {
-                $set: {
-                    proposedBy: telegramId,
-                    amount: Number(amount),
-                    status: 'pending',
-                    updatedAt: new Date(),
-                },
-                $setOnInsert: { createdAt: new Date() },
-            },
-            { upsert: true }
-        )
+        // Delete any existing bid first to ensure a clean slate
+        // (old bids may carry stale contractAddress/escrowStatus from a previous cycle)
+        await db.collection('bids').deleteOne({ matchId })
+        await db.collection('bids').insertOne({
+            matchId,
+            proposedBy: telegramId,
+            amount: Number(amount),
+            status: 'pending',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        })
         return NextResponse.json({ ok: true })
     }
 
     if (action === 'accept') {
-        // Mark bid as accepted
         await db.collection('bids').updateOne(
             { matchId },
             { $set: { status: 'accepted', acceptedBy: telegramId, updatedAt: new Date() } }
@@ -58,7 +55,7 @@ export async function POST(req: NextRequest) {
         try {
             let objectId: ObjectId
             try { objectId = new ObjectId(matchId) } catch {
-                return NextResponse.json({ ok: true }) // bid accepted but invalid matchId for deploy
+                return NextResponse.json({ ok: true })
             }
 
             const match = await db.collection('matches').findOne({ _id: objectId })
@@ -82,17 +79,16 @@ export async function POST(req: NextRequest) {
                     }
                 )
 
-                // Initialize date setup state
                 await db.collection('date_setup').updateOne(
                     { matchId },
                     {
                         $set: {
-                            step: 'fund', // fund → activity → datetime → done
+                            step: 'fund',
                             fundedBy: [],
                             selectedActivity: null,
-                            activityStatus: null, // pending_confirm, confirmed, declined
+                            activityStatus: null,
                             proposedDate: null,
-                            dateStatus: null, // pending_confirm, confirmed, declined
+                            dateStatus: null,
                             proposedBy: null,
                             updatedAt: new Date(),
                         },
@@ -103,7 +99,6 @@ export async function POST(req: NextRequest) {
             }
         } catch (err) {
             console.error('Auto-deploy failed:', err)
-            // Bid is still accepted even if deploy fails
         }
 
         return NextResponse.json({ ok: true })

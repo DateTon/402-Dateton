@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useNav } from "./NavContext";
@@ -41,8 +42,29 @@ const NAV_ITEMS = [
 export default function BottomNav() {
     const pathname = usePathname();
     const { navVisible } = useNav();
+    const [inputFocused, setInputFocused] = useState(false);
 
-    if (!navVisible) return null;
+    useEffect(() => {
+        const onFocusIn = (e: FocusEvent) => {
+            const tag = (e.target as HTMLElement)?.tagName;
+            if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
+                setInputFocused(true);
+                document.body.classList.add("keyboard-open");
+            }
+        };
+        const onFocusOut = () => {
+            setInputFocused(false);
+            document.body.classList.remove("keyboard-open");
+        };
+        document.addEventListener("focusin", onFocusIn);
+        document.addEventListener("focusout", onFocusOut);
+        return () => {
+            document.removeEventListener("focusin", onFocusIn);
+            document.removeEventListener("focusout", onFocusOut);
+        };
+    }, []);
+
+    if (!navVisible || inputFocused) return null;
 
     return (
         <nav className="bottom-nav">

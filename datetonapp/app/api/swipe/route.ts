@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getDatabase } from '../../../lib/mongodb';
 import { findUserByTelegramId } from '../../../lib/db';
+import { sendTelegramMessage } from '../../../lib/telegram';
 
 /**
  * POST /api/swipe
@@ -74,6 +75,19 @@ export async function POST(req: NextRequest) {
 
                 matched = true;
                 matchId = result.insertedId.toString();
+
+                // Notify both users via Telegram (awaited so Vercel doesn't kill the function)
+                const matchUrl = `${process.env.NEXT_PUBLIC_APP_URL}/chat/${matchId}`;
+                await Promise.allSettled([
+                    sendTelegramMessage(
+                        telegramId,
+                        `\u{1F499} <b>It's a match !</b>\n\nTu as match\u00e9 avec <b>${u2?.firstName ?? "quelqu'un"}</b> !\n\n<a href="${matchUrl}">\u{1F4AC} Ouvrir le chat \u2192</a>`
+                    ),
+                    sendTelegramMessage(
+                        targetTelegramId,
+                        `\u{1F499} <b>It's a match !</b>\n\nTu as match\u00e9 avec <b>${u1?.firstName ?? "quelqu'un"}</b> !\n\n<a href="${matchUrl}">\u{1F4AC} Ouvrir le chat \u2192</a>`
+                    ),
+                ]);
             }
         }
     }
