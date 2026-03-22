@@ -159,33 +159,6 @@ export async function POST(req: NextRequest) {
             { $set: { activityStatus: 'confirmed', step: 'datetime', updatedAt: new Date() } }
         )
 
-        // If a bundle was confirmed, pay lead fee via x402 with partner wallet
-        if (selected?.type === 'bundle' && selected?._id && process.env.PARTNER_MNEMONIC) {
-            try {
-                const keypair = await mnemonicToPrivateKey(process.env.PARTNER_MNEMONIC.split(' '))
-                const wallet = WalletContractV5R1.create({ workchain: 0, publicKey: keypair.publicKey })
-                const client = new TonClient({
-                    endpoint: process.env.TON_RPC_URL ?? 'https://testnet.toncenter.com/api/v2/jsonRPC',
-                    apiKey: process.env.PARTNER_RPC_API_KEY ?? process.env.RPC_API_KEY,
-                })
-                const openedWallet = client.open(wallet)
-
-                const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-                const { response, paid } = await x402Fetch(
-                    `${baseUrl}/api/bundles/${selected._id}/select`,
-                    { wallet: openedWallet, keypair, client },
-                    {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ matchId }),
-                    },
-                )
-                console.log(`[x402] Bundle lead fee: ${response.status}, paid: ${paid}`)
-            } catch (err) {
-                console.error('[x402] Bundle lead fee payment failed:', err)
-            }
-        }
-
         return NextResponse.json({ ok: true })
     }
 
@@ -249,6 +222,35 @@ export async function POST(req: NextRequest) {
                 },
             }
         )
+
+        // If a bundle was selected as activity, pay lead fee via x402 with partner wallet
+        const selected = setup?.selectedActivity
+        if (selected?.type === 'bundle' && selected?._id && process.env.PARTNER_MNEMONIC) {
+            try {
+                const keypair = await mnemonicToPrivateKey(process.env.PARTNER_MNEMONIC.split(' '))
+                const wallet = WalletContractV5R1.create({ workchain: 0, publicKey: keypair.publicKey })
+                const client = new TonClient({
+                    endpoint: process.env.TON_RPC_URL ?? 'https://testnet.toncenter.com/api/v2/jsonRPC',
+                    apiKey: process.env.PARTNER_RPC_API_KEY ?? process.env.RPC_API_KEY,
+                })
+                const openedWallet = client.open(wallet)
+
+                const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+                const { response, paid } = await x402Fetch(
+                    `${baseUrl}/api/bundles/${selected._id}/select`,
+                    { wallet: openedWallet, keypair, client },
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ matchId }),
+                    },
+                )
+                console.log(`[x402] Bundle lead fee: ${response.status}, paid: ${paid}`)
+            } catch (err) {
+                console.error('[x402] Bundle lead fee payment failed:', err)
+            }
+        }
+
         return NextResponse.json({ ok: true })
     }
 
