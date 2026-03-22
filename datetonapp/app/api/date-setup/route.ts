@@ -61,12 +61,14 @@ export async function POST(req: NextRequest) {
         const recentCancel = await db.collection('match_messages').findOne({
             matchId,
             type: 'system',
-            message: { $in: ['Refund emitted \u2014 Date Cancelled', 'Date cancelled'] },
+            message: { $regex: /Refund emitted.*Date Cancelled|cancelled the date/i },
             createdAt: { $gte: tenSecondsAgo },
         })
 
         if (!recentCancel) {
-            const sysMsg = hasFunded ? 'Refund emitted \u2014 Date Cancelled' : 'Date cancelled'
+            const currentUser = await findUserByTelegramId(telegramId)
+            const userName = currentUser?.firstName ?? 'Your match'
+            const sysMsg = hasFunded ? `Refund emitted by ${userName} \u2014 Date Cancelled` : `${userName} cancelled the date`
             await db.collection('match_messages').insertOne({
                 matchId,
                 from: 0,
@@ -77,17 +79,16 @@ export async function POST(req: NextRequest) {
 
             // Notify other user via Telegram
             if (otherTelegramId) {
-                const currentUser = await findUserByTelegramId(telegramId)
                 const chatUrl = `https://t.me/DateTonBot/DateTon?startapp=chat_${matchId}`
                 if (hasFunded) {
                     await sendTelegramMessage(
                         otherTelegramId,
-                        `\u{1F6AB} <b>Refund emitted \u2014 Date Cancelled</b>\n\n<a href="${chatUrl}">Open chat \u2192</a>`
+                        `\u{1F6AB} <b>Refund emitted by ${userName} \u2014 Date Cancelled</b>\n\n<a href="${chatUrl}">Open chat \u2192</a>`
                     )
                 } else {
                     await sendTelegramMessage(
                         otherTelegramId,
-                        `\u{274C} <b>${currentUser?.firstName ?? 'Your match'} cancelled the date</b>\n\n<a href="${chatUrl}">Open chat \u2192</a>`
+                        `\u{274C} <b>${userName} cancelled the date</b>\n\n<a href="${chatUrl}">Open chat \u2192</a>`
                     )
                 }
             }
