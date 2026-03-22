@@ -70,6 +70,9 @@ The Boost:
 Current app link:
 [https://datetonapp.vercel.app](https://datetonapp.vercel.app)
 
+Demo : 
+https://www.youtube.com/watch?v=6zt-bACV4tA
+
 Accessible only through Telegram.
 
 ## Local Setup
