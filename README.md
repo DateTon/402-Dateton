@@ -31,11 +31,12 @@ This creates real commitment and pushes matches to become actual dates.
 - Cross-code validation to release funds
 - Refund flow
 - **Boost** feature via TonConnect
+- **Protocol x402** integration for partner-driven monetization
 
 ## Privacy
 
-All user data is encrypted.  
-All chat messages are encrypted.  
+All user data is encrypted.
+All chat messages are encrypted.
 Privacy and secure interactions are a core part of DateTon.
 
 ## Boost
@@ -43,6 +44,7 @@ Privacy and secure interactions are a core part of DateTon.
 Users can buy a **Boost** for **1 TON**.
 
 The Boost:
+
 - places the user at the top of the feed for 1 hour
 - increases profile visibility
 - removes bid fees during the boost period
@@ -50,6 +52,7 @@ The Boost:
 ## Smart Contract
 
 `DateEscrow.tact` handles:
+
 - `Fund`
 - `ConfirmRelease`
 - `Release`
@@ -57,13 +60,14 @@ The Boost:
 
 ## Monetization
 
-- Fixed negotiation fee: **0.05 TON per user**
+- Fixed funding date fee: **0.05 TON per user**
+- Fixed refunding fee : 0.1 TON per request
 - **Boost** purchase: **1 TON**
-- Future partner commissions from date venues and activities
+- **Protocol x402**: **0.1 TON** per date (paid by partners for each client brought to them)
 
 ## Demo
 
-Current app link:  
+Current app link:
 [https://datetonapp.vercel.app](https://datetonapp.vercel.app)
 
 Accessible only through Telegram.
@@ -77,3 +81,4 @@ git clone <repo-link>
 cd <project-folder>
 npm install
 npm run dev
+```
