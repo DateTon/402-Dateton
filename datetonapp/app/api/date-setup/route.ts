@@ -37,13 +37,6 @@ export async function POST(req: NextRequest) {
         const setup = await db.collection('date_setup').findOne({ matchId })
         const hasFunded = (setup?.fundedBy?.length ?? 0) > 0
 
-        // Check if a cancel system message was already sent (avoid duplicates from concurrent calls)
-        const existingCancel = await db.collection('match_messages').findOne({
-            matchId,
-            type: 'system',
-            message: { $in: ['Refund requested \u2014 date cancelled', 'Date cancelled'] },
-        })
-
         let otherTelegramId: number | null = null
         try {
             const objectId = new ObjectId(matchId)
@@ -60,8 +53,17 @@ export async function POST(req: NextRequest) {
         await db.collection('date_setup').deleteOne({ matchId })
         await db.collection('bids').deleteOne({ matchId })
 
-        if (!existingCancel) {
-            const sysMsg = hasFunded ? 'Refund requested \u2014 date cancelled' : 'Date cancelled'
+        // Anti-doublon: only skip if the same cancel message was sent in the last 10s (concurrent call)
+        const tenSecondsAgo = new Date(Date.now() - 10_000)
+        const recentCancel = await db.collection('match_messages').findOne({
+            matchId,
+            type: 'system',
+            message: { $in: ['Refund emitted \u2014 Date Cancelled', 'Date cancelled'] },
+            createdAt: { $gte: tenSecondsAgo },
+        })
+
+        if (!recentCancel) {
+            const sysMsg = hasFunded ? 'Refund emitted \u2014 Date Cancelled' : 'Date cancelled'
             await db.collection('match_messages').insertOne({
                 matchId,
                 from: 0,
@@ -70,14 +72,14 @@ export async function POST(req: NextRequest) {
                 createdAt: new Date(),
             })
 
-            // Notify other user via Telegram (awaited so Vercel doesn't kill the function)
+            // Notify other user via Telegram
             if (otherTelegramId) {
                 const currentUser = await findUserByTelegramId(telegramId)
                 const chatUrl = `${process.env.NEXT_PUBLIC_APP_URL}/chat/${matchId}`
                 if (hasFunded) {
                     await sendTelegramMessage(
                         otherTelegramId,
-                        `\u{1F6AB} <b>${currentUser?.firstName ?? 'Your match'} asked for a refund</b>\n\nThe date has been cancelled.\n\n<a href="${chatUrl}">Open chat \u2192</a>`
+                        `\u{1F6AB} <b>Refund emitted \u2014 Date Cancelled</b>\n\n<a href="${chatUrl}">Open chat \u2192</a>`
                     )
                 } else {
                     await sendTelegramMessage(
