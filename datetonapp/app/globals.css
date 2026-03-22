@@ -1862,6 +1862,35 @@ body.keyboard-open .app-shell {
   margin-top: 0.25rem;
 }
 
+/* ── Bundle Card ── */
+.activity-card-bundle {
+    box-shadow: 0 0 0 2px #7c3aed, 0 0 20px 2px rgba(124, 58, 237, 0.3);
+    border-radius: inherit;
+    position: relative;
+}
+
+.bundle-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 999px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    z-index: 10;
+}
+
+.bundle-partner-name {
+    font-size: 0.7rem;
+    color: #a855f7;
+    font-weight: 600;
+    margin-top: 2px;
+}
+
 /* ── Activity Confirm Card ── */
 .activity-confirm-card {
   background: var(--color-bg-card);

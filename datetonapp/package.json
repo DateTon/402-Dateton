@@ -7,9 +7,12 @@
     "build": "next build",
     "vercel-build": "cd .. && pnpm install --no-frozen-lockfile && pnpm -r build",
     "start": "next start",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "seed-bundles": "tsx scripts/seedBundles.ts",
+    "demo-x402": "tsx scripts/demo-x402-partner.ts"
   },
   "dependencies": {
+    "@ton-x402/client": "workspace:*",
     "@ton-x402/core": "workspace:*",
     "@ton-x402/facilitator": "workspace:*",
     "@ton-x402/middleware": "workspace:*",

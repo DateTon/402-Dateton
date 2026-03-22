@@ -27,7 +27,8 @@
       "Bash(MONGODB_URI=\"mongodb+srv://hedifourati_db_user:hackathon1234@chat-app.lkhtc8e.mongodb.net/chat_app?retryWrites=true&w=majority\" MONGODB_DB_NAME=\"DateTon\" npx tsx scripts/seedActivities.ts)",
       "Bash(npx blueprint:*)",
       "Bash(pnpm install:*)",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "Bash(node -e \":*)"
     ]
   }
 }

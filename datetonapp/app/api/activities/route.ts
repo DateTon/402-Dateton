@@ -22,16 +22,23 @@ export async function GET(req: NextRequest) {
 
     const db = await getDatabase()
 
-    const allActivities = await db.collection('activities').find({
-        available: true,
-        averagePrice: { $lte: amount },
-    }).toArray()
+    // Fetch activities AND bundles in parallel, same filters
+    const [allActivities, allBundles] = await Promise.all([
+        db.collection('activities').find({
+            available: true,
+            averagePrice: { $lte: amount },
+        }).toArray(),
+        db.collection('bundles').find({
+            available: true,
+            averagePrice: { $lte: amount },
+        }).toArray(),
+    ])
 
-    // Filter by schedule for current day
-    const filtered = allActivities.filter(a => {
-        const daySlot = a.schedule?.[dayIndex]
-        return daySlot != null // not null = open today
-    })
+    // Filter by schedule for current day (same logic for both)
+    const bySchedule = (a: any) => a.schedule?.[dayIndex] != null
 
-    return NextResponse.json(filtered)
+    return NextResponse.json([
+        ...allBundles.filter(bySchedule).map(b => ({ ...b, type: 'bundle' })),
+        ...allActivities.filter(bySchedule).map(a => ({ ...a, type: 'activity' })),
+    ])
 }
