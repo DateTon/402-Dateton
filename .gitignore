@@ -7,3 +7,7 @@ examples/nextjs-server/.env.local
 *.tsbuildinfo
 .idea/
 examples/nextjs-server/.env.local
+.env.*
+!.env.example
+!.env.*.example
+.claude/settings.local.json
